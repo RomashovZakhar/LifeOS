@@ -65,7 +65,7 @@
 | Upgrade / iCloud / Rate / brand footer | Явно исключены в 05 H8 |
 | Strong-like (программы, суперсеты, Health, plate calc) | Вне scope 06 |
 | Notion/Todoist-шум, градиенты, glass | Design system + модули не вводят |
-| Геймификация / badges достижений | Нет (day badge = selected/today эталона — ок) |
+| Геймификация / badges достижений | Нет (day badge = только календарное сегодня; selected в grid без красной строки) |
 | 0% как стыд в сетке | Запрещён; `·` |
 
 ### 2.4 Offline
@@ -115,10 +115,10 @@
 |------|-----|--------|
 | 1 | H0 / H1 | MonthGrid empty + с колонками; dock; месяц; selected day; weekend bands |
 | 2 | H3 | New tracker (все types; workout chip once; Symbol unique) |
-| 3 | H2 | Today panel; close tap-outside + swipe; future hint |
-| 4 | — | Completion toggle (grid + Today) |
-| 5 | H4 | Time sheet |
-| 6 | H5 / H6 | Count + Distance/Weight sheets |
+| 3 | H2 | Today panel; day label / СЕГОДНЯ; swipe dismiss + slide |
+| 4 | — | Completion toggle **только в Today** |
+| 5 | H4a / H4 | Cell → Completion confirm + Time sheet (`photo_14`) |
+| 6 | H5 / H6 | Count + Distance/Weight sheets (`photo_21`) |
 | 7 | H7 | Ordinary tracker detail (range, heatmap, edit/delete) |
 | 8 | H8 / H9 | Settings + Appearance + Export |
 
