@@ -210,8 +210,10 @@ type ChecklistDayLine = {
 | `date` | `YYYY-MM-DD` | **unique** — одна сессия на день |
 | `status` | `'in_progress' \| 'completed'` | |
 | `startedAt` | string ISO | Старт секундомера |
+| `pausedAt` | string ISO \| null | null = тикает; иначе момент постановки на паузу |
+| `pauseAccumulatedSeconds` | number | Сумма завершённых пауз (сек); default 0 |
 | `endedAt` | string ISO \| null | |
-| `durationSeconds` | number \| null | null пока in_progress; после finish ≥ 0; **редактируемо**; **источник ячейки портала** |
+| `durationSeconds` | number \| null | null пока in_progress; после finish = elapsed с учётом пауз; **редактируемо**; **источник ячейки портала** |
 | `templateId` | string \| null | Откуда стартовали (для «Обновить шаблон?») |
 | `exercises` | SessionExercise[] | Вложено |
 | `updatedAt` | string ISO | |
@@ -236,7 +238,8 @@ type SessionSet = {
 **Инварианты write-path:**
 
 - Finish запрещён, если нет ни одного упражнения **или** нет ни одного set (строго: ≥1 exercise и ≥1 set суммарно — зафиксируем: **≥1 exercise с ≥1 set**).  
-- Пока `in_progress`, `durationSeconds` не пишется в «финальную» ячейку (UI `·`); таймер = `now - startedAt` (политика kill → 06, поле уже позволяет resume).  
+- Пока `in_progress`, `durationSeconds` не пишется в ячейку (UI `·`).  
+- Таймер: `elapsed = floor((t - startedAt)/1000) - pauseAccumulatedSeconds`, где `t = pausedAt ?? now`. Пауза/resume и kill — см. `06_workout_module.md`.  
 - После `completed`, правка `durationSeconds` не требует трогать Habit Entry.  
 - «Прошлый раз»: последняя `completed` сессия с `date < current` (или `< today`), где есть `exerciseId`, взять sets этого SessionExercise.  
 - «Обновить шаблон?» на finish: если `templateId` set → заменить `exerciseIds` шаблона на порядок `exercises[].exerciseId` текущей сессии.
@@ -344,7 +347,8 @@ workout_portal tracker ──проекция── workout_sessions.durationSec
 - полный Export;  
 - dark/light в settings.
 
-Сознательные упрощения (ок для V1): нет multi-device sync; нет hard-delete exercise; таймер resume детали — в 06 на тех же полях; нет отдельной таблицы sets (вложено в session).
+Сознательные упрощения (ок для V1): нет multi-device sync; нет hard-delete exercise; нет отдельной таблицы sets (вложено в session).  
+Дополнение 2026-07-19: пауза таймера — поля `pausedAt` + `pauseAccumulatedSeconds` (по решению 06).
 
 ---
 
