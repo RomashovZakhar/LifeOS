@@ -215,12 +215,12 @@ Symbol / Тип (badge) / Создано
 ENTRIES  {count}
 History heatmap
 Список записей по периоду
-РЕДАКТИРОВАТЬ | УДАЛИТЬ
+ИЗМЕНИТЬ | УДАЛИТЬ
 ```
 
 **Range chips** — стиль fill selected (03).  
 **Heatmap / list** — наличие entry в день.  
-**РЕДАКТИРОВАТЬ** → форма как New tracker, но **без смены Type** (type readonly/disabled). Name, Symbol, unit/format editable.  
+**ИЗМЕНИТЬ** → форма как New tracker, но **без смены Type** (type readonly/disabled). Name, Symbol, unit/format editable.  
 **УДАЛИТЬ** → confirm → cascade entries (04b).
 
 Workout portal / checklist Symbol **не** открывают H7.

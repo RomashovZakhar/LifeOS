@@ -139,13 +139,13 @@ type EntryValue =
 
 | Поле | Тип | Смысл |
 |------|-----|--------|
-| `id` | string | PK — стабильный across history |
+| `id` | string | PK — стабильный id; после delete строки в старых `checklist_days.lines` могут ссылаться на уже несуществующий id — это ок |
 | `trackerId` | string | FK checklist tracker |
 | `title` | string | |
 | `sortOrder` | number | Drag |
-| `archivedAt` | string ISO \| null | null = активен в определении |
 
-Архив вместо hard-delete: старые снимки дней могут ссылаться на id.
+**Удаление пункта:** hard delete из `checklist_items`.  
+**Не** каскадить в `checklist_days` — снимки и % прошлого не меняются (07).
 
 #### `checklist_days` (снимок + прогресс дня)
 
@@ -170,12 +170,12 @@ type ChecklistDayLine = {
 **Жизненный цикл (важно):**
 
 1. День ещё не открывали и ничего не отмечали → **нет** `checklist_days` → сетка `·`.  
-2. Первое открытие дня / первая галочка → создать день: `lines` = все **неархивные** items трекера (title скопировать), `checked: false`, затем выставить галочку.  
+2. Первое открытие дня / первая галочка → создать день: `lines` = все текущие items трекера (title скопировать), `checked: false`, затем выставить галочку.  
 3. Пока `lines.every(l => !l.checked)` → UI сетки всё ещё `·` (IA).  
 4. Хотя бы один `checked` → UI показывает `round(100 * done / lines.length)`.  
 5. Позже в определение добавили пункт → при следующем открытии **сегодняшнего** дня: дописать новые lines; **прошлые** `checklist_days` не трогать.  
-6. Пункт архивировали → из определения пропал; прошлые дни хранят line; у сегодня: убрать line только если `!checked`, иначе оставить (факт «сделал» сохраняется).  
-7. Округление %: `Math.round` до целого — зафиксировано здесь для 07.
+6. Пункт **удалили** (hard delete) → из определения пропал; **прошлые дни не трогаем**; у сегодня: убрать line если `!checked`, иначе оставить (факт «сделал»).  
+7. Округление %: `Math.round` до целого — в 07.
 
 Так история % не пересчитывается задним числом при смене набора.
 
@@ -282,8 +282,8 @@ workout_portal tracker ──проекция── workout_sessions.durationSec
 | Delete ordinary tracker | Delete all its `entries` |
 | Delete checklist tracker | Delete `checklist_items` + `checklist_days` этого tracker |
 | Delete workout_portal tracker | Delete **all** `workout_sessions`; **не** удалять `exercises` / `workout_templates` |
-| Archive checklist item | `archivedAt=now`; см. merge-правила дня |
-| Delete exercise (hard) | V1: только archive; hard delete запрещён если referenced — проще всегда archive |
+| Delete checklist item | Hard delete item row; **не** трогать `checklist_days` |
+| Delete / archive exercise | V1: только archive exercise (`archivedAt`); hard delete не нужен |
 
 ---
 
@@ -348,7 +348,8 @@ workout_portal tracker ──проекция── workout_sessions.durationSec
 - dark/light в settings.
 
 Сознательные упрощения (ок для V1): нет multi-device sync; нет hard-delete exercise; нет отдельной таблицы sets (вложено в session).  
-Дополнение 2026-07-19: пауза таймера — поля `pausedAt` + `pauseAccumulatedSeconds` (по решению 06).
+Дополнение 2026-07-19: пауза таймера — поля `pausedAt` + `pauseAccumulatedSeconds` (по решению 06).  
+Дополнение 2026-07-19: checklist items — hard delete без `archivedAt`; снимки дней сохраняют историю % (07).
 
 ---
 
