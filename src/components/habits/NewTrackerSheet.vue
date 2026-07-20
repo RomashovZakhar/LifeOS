@@ -19,6 +19,8 @@ import {
 const props = defineProps<{
   /** Prefill + save mode (type locked). */
   tracker?: Tracker
+  /** Sheet z-index layer when nested above another sheet. */
+  layer?: number
 }>()
 
 const emit = defineEmits<{
@@ -213,6 +215,7 @@ async function onSubmit() {
   <BottomSheet
     :title="isEdit ? 'Изменить трекер' : 'Новый трекер'"
     size="tall"
+    :layer="layer ?? 40"
     @close="emit('close')"
   >
     <div class="form">
@@ -317,7 +320,7 @@ async function onSubmit() {
 .form {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 18px;
 }
 
 .field {
@@ -335,9 +338,10 @@ async function onSubmit() {
 .input {
   width: 100%;
   box-sizing: border-box;
+  min-height: 52px;
   padding: 14px 16px;
   border: 0;
-  border-radius: var(--radius-md);
+  border-radius: 14px;
   background: var(--color-surface-3);
   color: var(--color-text-primary);
   font-size: 1.0625rem;

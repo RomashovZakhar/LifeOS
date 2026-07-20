@@ -1,143 +1,156 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
+import { computed, onMounted, onUnmounted, provide, ref, toRef } from "vue";
 import {
   SHEET_DISMISS_LOCK_KEY,
   type SheetDismissLock,
-} from '@/composables/sheetDismissLock'
-import { useSwipeDismiss } from '@/composables/useSwipeDismiss'
+} from "@/composables/sheetDismissLock";
+import {
+  isTopSheet,
+  registerSheet,
+  unregisterSheet,
+} from "@/composables/sheetStack";
+import { useSwipeDismiss } from "@/composables/useSwipeDismiss";
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
-    title?: string
+    title?: string;
     /** tall = 90vh (New tracker); auto = content height capped */
-    size?: 'tall' | 'auto'
-    ariaLabel?: string
+    size?: "tall" | "auto";
+    ariaLabel?: string;
+    /** Stacking above nested sheets (default 40). */
+    layer?: number;
   }>(),
-  { size: 'tall' },
-)
+  { size: "tall", layer: 40 },
+);
 
 const emit = defineEmits<{
-  close: []
-}>()
+  close: [];
+}>();
 
-const open = ref(false)
-const leaving = ref(false)
-const dismissLocked = ref(false)
-const bodyEl = ref<HTMLElement | null>(null)
-let leaveTimer: number | undefined
+const sheetId = Symbol("sheet");
+const open = ref(false);
+const leaving = ref(false);
+const dismissLocked = ref(false);
+const bodyEl = ref<HTMLElement | null>(null);
+let leaveTimer: number | undefined;
 
 const { dragY, dragging, onTouchStart, onTouchMove, onTouchEnd, reset } =
-  useSwipeDismiss(
-    () => requestClose(),
-    72,
-    { canBegin: canBeginDismiss },
-  )
+  useSwipeDismiss(() => requestClose(), 72, { canBegin: canBeginDismiss });
 
 const dismissLockApi: SheetDismissLock = {
   lock: () => {
-    dismissLocked.value = true
-    reset()
+    dismissLocked.value = true;
+    reset();
   },
   unlock: () => {
-    dismissLocked.value = false
+    dismissLocked.value = false;
   },
-}
-provide(SHEET_DISMISS_LOCK_KEY, dismissLockApi)
+};
+provide(SHEET_DISMISS_LOCK_KEY, dismissLockApi);
 
 const panelStyle = computed(() => {
   if (leaving.value) {
     return {
-      transform: 'translateY(100%)',
-      transition: 'transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
-    }
+      transform: "translateY(100%)",
+      transition: "transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)",
+    };
   }
   if (dragging.value || dragY.value > 0) {
     return {
       transform: `translateY(${dragY.value}px)`,
       transition: dragging.value
-        ? 'none'
-        : 'transform 0.28s cubic-bezier(0.22, 1, 0.36, 1)',
-    }
+        ? "none"
+        : "transform 0.28s cubic-bezier(0.22, 1, 0.36, 1)",
+    };
   }
-  return undefined
-})
+  return undefined;
+});
 
 function requestClose() {
-  if (leaving.value || dismissLocked.value) return
-  leaving.value = true
-  open.value = false
-  dragging.value = false
-  window.clearTimeout(leaveTimer)
+  if (leaving.value || dismissLocked.value) return;
+  leaving.value = true;
+  open.value = false;
+  dragging.value = false;
+  window.clearTimeout(leaveTimer);
   leaveTimer = window.setTimeout(() => {
-    reset()
-    emit('close')
-  }, 300)
+    reset();
+    emit("close");
+  }, 300);
 }
 
-provide('sheetClose', requestClose)
+provide("sheetClose", requestClose);
 
 function canBeginDismiss(e: TouchEvent): boolean {
-  if (dismissLocked.value) return false
-  const target = e.target
-  if (!(target instanceof Element)) return true
+  if (dismissLocked.value) return false;
+  if (!isTopSheet(sheetId)) return false;
+  const target = e.target;
+  if (!(target instanceof Element)) return true;
 
-  // Nested drag / form fields
   if (
     target.closest(
-      '.handle, .sortable-chosen, .sortable-drag, input, textarea, select',
+      ".handle, .sortable-chosen, .sortable-drag, input, textarea, select",
     )
   ) {
-    return false
+    return false;
   }
 
-  // Header / grab — always
-  if (target.closest('.chrome')) return true
+  if (target.closest(".chrome")) return true;
 
-  // Scrollable body: only when already at top (pull-to-dismiss)
-  const body = bodyEl.value
+  const body = bodyEl.value;
   if (body && body.scrollHeight > body.clientHeight + 1) {
-    return body.scrollTop <= 0
+    return body.scrollTop <= 0;
   }
-  return true
+  return true;
 }
 
 function onPanelTouchStart(e: TouchEvent) {
-  onTouchStart(e)
+  onTouchStart(e);
 }
 
 function onPanelTouchMove(e: TouchEvent) {
-  onTouchMove(e)
+  onTouchMove(e);
 }
 
 function onPanelTouchEnd() {
-  onTouchEnd()
+  onTouchEnd();
 }
 
 function onKey(e: KeyboardEvent) {
-  if (e.key === 'Escape') requestClose()
+  if (e.key !== "Escape") return;
+  if (!isTopSheet(sheetId)) return;
+  e.stopPropagation();
+  requestClose();
 }
 
 onMounted(() => {
-  document.addEventListener('keydown', onKey)
-  document.body.style.overflow = 'hidden'
+  registerSheet({
+    id: sheetId,
+    layer: props.layer,
+    close: requestClose,
+  });
+  document.addEventListener("keydown", onKey);
   requestAnimationFrame(() => {
-    open.value = true
-  })
-})
+    open.value = true;
+  });
+});
 
 onUnmounted(() => {
-  document.removeEventListener('keydown', onKey)
-  document.body.style.overflow = ''
-  window.clearTimeout(leaveTimer)
-})
+  unregisterSheet(sheetId);
+  document.removeEventListener("keydown", onKey);
+  window.clearTimeout(leaveTimer);
+});
 
-defineExpose({ requestClose })
+defineExpose({ requestClose });
+
+// keep layer reactive for template
+const layer = toRef(props, "layer");
 </script>
 
 <template>
   <div
     class="sheet-root"
     :class="{ open, leaving, dragging }"
+    :style="{ '--sheet-z': layer }"
   >
     <button
       type="button"
@@ -167,7 +180,13 @@ defineExpose({ requestClose })
             aria-label="Закрыть"
             @click="requestClose"
           >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              aria-hidden="true"
+            >
               <path
                 d="M2 2L12 12M12 2L2 12"
                 stroke="currentColor"
@@ -225,7 +244,7 @@ defineExpose({ requestClose })
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 480px;
+  max-width: var(--layout-max);
   margin: 0 auto;
   border-radius: 20px 20px 0 0;
   background: var(--color-surface-2);
@@ -276,7 +295,7 @@ defineExpose({ requestClose })
   align-items: center;
   justify-content: center;
   min-height: 48px;
-  padding: 4px 16px 8px;
+  padding: 4px var(--layout-gutter) 8px;
   flex: 0 0 auto;
 }
 
@@ -289,7 +308,7 @@ defineExpose({ requestClose })
 
 .close {
   position: absolute;
-  right: 12px;
+  right: var(--layout-gutter);
   top: 50%;
   transform: translateY(-50%);
   width: 36px;
@@ -307,14 +326,14 @@ defineExpose({ requestClose })
 
 .header-slot {
   flex: 0 0 auto;
-  padding: 4px 16px 8px;
+  padding: 4px var(--layout-gutter) 8px;
 }
 
 .body {
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
-  padding: 8px 16px 12px;
+  padding: 4px var(--layout-gutter) 12px;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -325,6 +344,6 @@ defineExpose({ requestClose })
 
 .footer {
   flex: 0 0 auto;
-  padding: 8px 16px 12px;
+  padding: 8px var(--layout-gutter) 12px;
 }
 </style>

@@ -26,21 +26,21 @@ function flash(msg: string) {
 </script>
 
 <template>
-  <main class="page">
-    <header class="head">
-      <h1 class="title">Настройки</h1>
+  <main class="page-shell">
+    <header class="page-shell-head">
+      <h1 class="page-shell-title">Настройки</h1>
       <CloseButton to="/" />
     </header>
 
-    <section class="group">
-      <RouterLink class="row" to="/settings/appearance">
+    <section class="page-group">
+      <RouterLink class="page-row between" to="/settings/appearance">
         <span>Оформление</span>
         <span class="chev" aria-hidden="true">›</span>
       </RouterLink>
     </section>
 
-    <section class="group">
-      <button type="button" class="row action" @click="onExport">
+    <section class="page-group block">
+      <button type="button" class="page-row" @click="onExport">
         Экспорт данных
       </button>
     </section>
@@ -50,52 +50,12 @@ function flash(msg: string) {
 </template>
 
 <style scoped>
-.page {
-  padding: 12px 16px;
-  max-width: 480px;
-  margin: 0 auto;
-  box-sizing: border-box;
-}
-
-.head {
-  display: flex;
-  align-items: flex-start;
+.between {
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 28px;
-  padding-top: 4px;
 }
 
-.title {
-  margin: 0;
-  font-size: 1.75rem;
-  font-weight: 400;
-  letter-spacing: -0.02em;
-}
-
-.group {
-  margin-bottom: 16px;
-  border-radius: 14px;
-  overflow: hidden;
-  background: var(--color-surface-1);
-}
-
-.row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  width: 100%;
-  padding: 16px;
-  text-align: left;
-  background: var(--color-surface-3);
-  color: var(--color-text-primary);
-  font-size: 1.0625rem;
-  text-decoration: none;
-}
-
-.row.action {
-  justify-content: flex-start;
+.block {
+  margin-top: 12px;
 }
 
 .chev {

@@ -6,17 +6,16 @@ const settings = useSettingsStore()
 </script>
 
 <template>
-  <main class="page">
-    <header class="head">
-      <h1 class="title">Оформление</h1>
+  <main class="page-shell">
+    <header class="page-shell-head">
+      <h1 class="page-shell-title">Оформление</h1>
       <CloseButton to="/settings" />
     </header>
 
-    <section class="group" aria-label="Тема">
+    <section class="page-group" aria-label="Тема">
       <button
         type="button"
-        class="row"
-        :class="{ selected: settings.theme === 'dark' }"
+        class="page-row"
         @click="settings.setTheme('dark')"
       >
         <span class="radio" :class="{ on: settings.theme === 'dark' }" />
@@ -24,8 +23,7 @@ const settings = useSettingsStore()
       </button>
       <button
         type="button"
-        class="row"
-        :class="{ selected: settings.theme === 'light' }"
+        class="page-row"
         @click="settings.setTheme('light')"
       >
         <span class="radio" :class="{ on: settings.theme === 'light' }" />
@@ -36,51 +34,8 @@ const settings = useSettingsStore()
 </template>
 
 <style scoped>
-.page {
-  padding: 12px 16px;
-  max-width: 480px;
-  margin: 0 auto;
-  box-sizing: border-box;
-}
-
-.head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 28px;
-  padding-top: 4px;
-}
-
-.title {
-  margin: 0;
-  font-size: 1.75rem;
-  font-weight: 400;
-  letter-spacing: -0.02em;
-}
-
-.group {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  border-radius: 14px;
-  overflow: hidden;
-  background: var(--color-surface-1);
-}
-
-.row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  padding: 16px;
-  text-align: left;
-  background: var(--color-surface-3);
-  color: var(--color-text-primary);
-  font-size: 1.0625rem;
-}
-
 .radio {
+  flex: 0 0 22px;
   width: 22px;
   height: 22px;
   border-radius: 999px;

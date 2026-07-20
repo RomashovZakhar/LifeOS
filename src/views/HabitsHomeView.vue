@@ -12,6 +12,7 @@ import NumericEntrySheet from '@/components/habits/NumericEntrySheet.vue'
 import TimeEntrySheet from '@/components/habits/TimeEntrySheet.vue'
 import TodayPanel from '@/components/habits/TodayPanel.vue'
 import TrackerDetailSheet from '@/components/habits/TrackerDetailSheet.vue'
+import WorkoutSessionSheet from '@/components/workout/WorkoutSessionSheet.vue'
 import { useLiveQuery } from '@/composables/useLiveQuery'
 import {
   db,
@@ -170,7 +171,7 @@ const detailKind = computed(() => {
 })
 
 watch(detailKind, (kind) => {
-  if (kind === 'portal') closeDetail()
+  if (kind === 'portal') openWorkout(selectedDate.value)
 })
 
 watch(detailTrackerId, async (id) => {
@@ -189,6 +190,25 @@ function openDetail(trackerId: string) {
 function closeDetail() {
   const q = { ...route.query }
   delete q.detail
+  void router.replace({ path: '/', query: q })
+}
+
+const workoutDate = computed(() => {
+  const v = route.query.workout
+  return typeof v === 'string' && v ? v : null
+})
+
+function openWorkout(date: string) {
+  closeToday()
+  const q = { ...route.query }
+  delete q.detail
+  q.workout = date
+  void router.push({ path: '/', query: q })
+}
+
+function closeWorkout() {
+  const q = { ...route.query }
+  delete q.workout
   void router.replace({ path: '/', query: q })
 }
 
@@ -220,7 +240,7 @@ function onSelectDate(date: string) {
 
 function onOpenSymbol(tracker: Tracker) {
   if (tracker.type === 'workout_portal') {
-    void router.push({ path: '/workout', query: { date: selectedDate.value } })
+    openWorkout(selectedDate.value)
     return
   }
   openDetail(tracker.id)
@@ -258,7 +278,7 @@ function onOpenCell(payload: { tracker: Tracker; date: string }) {
   }
 
   if (payload.tracker.type === 'workout_portal') {
-    void router.push({ path: '/workout', query: { date: payload.date } })
+    openWorkout(payload.date)
     return
   }
   if (payload.tracker.type === 'checklist') {
@@ -283,7 +303,7 @@ function onOpenFromToday(tracker: Tracker) {
     return
   }
   if (tracker.type === 'workout_portal') {
-    void router.push({ path: '/workout', query: { date: selectedDate.value } })
+    openWorkout(selectedDate.value)
     return
   }
   if (tracker.type === 'checklist') {
@@ -407,6 +427,12 @@ onUnmounted(() => {
       @open-device="openDeviceFromDay"
     />
 
+    <WorkoutSessionSheet
+      v-if="workoutDate"
+      :date="workoutDate"
+      @close="closeWorkout"
+    />
+
     <CompletionEntrySheet
       v-if="entryTracker && entryType === 'completion'"
       :tracker="entryTracker"
@@ -442,8 +468,8 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 8px 16px 0;
-  max-width: 480px;
+  padding: 8px var(--layout-gutter) 0;
+  max-width: var(--layout-max);
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;

@@ -78,7 +78,7 @@ BottomDock (full-month): ↑  ↓  СЕГОДНЯ  +  …
 | Time              | `·`                         | по `config.timeFormat`: `22:30` (24h) или `10:30 PM` (ampm); везде одинаково (сетка + Today) |
 | Count             | `·`                         | число (`0` показывается)                                                                     |
 | Distance / Weight | `·`                         | `value` с **1** знаком + unit lowercase (`75.0 kg`, `2.4 km`) — **и в сетке, и в Today**     |
-| Workout portal    | `·`                         | длительность **`H:MM`** из `durationSeconds` (напр. `1:15`); см. §8                          |
+| Workout portal    | `·`                         | длительность **`M:SS`** из `durationSeconds` (напр. `21:34`, `120:00` = 2ч); см. §8                          |
 | Checklist         | `·` если done=0 или нет дня | `N%` (напр. `60%`)                                                                           |
 
 **Взаимодействия сетки (утверждено 2026-07-20):**
@@ -241,7 +241,7 @@ Notes — нет.
 ### H6b — Sheet: длительность портала (Habits-side)
 
 Только если есть `completed` session на этот день.  
-Reuse: два барабана часы/минуты **длительности** (не время суток) или число минут — **решение: H:MM wheel duration**, primary ОБНОВИТЬ → `session.durationSeconds`.  
+Reuse: поле `M:SS` (минуты:секунды; минуты могут быть >59, напр. `120:00`) → `session.durationSeconds`.  
 Нет trash «удалить длительность» отдельно: удаление сессии — в 06.  
 Если session `in_progress` / отсутствует — этот sheet не открывать; вести в 06.
 
@@ -454,6 +454,6 @@ Home grid = LifeOS root · RU · mono cells · 1-letter days · weekend bands
 Day label / СЕГОДНЯ → Today · cell → entry sheet (Completion confirm H4a)
 Today Completion = toggle · Time/Count sheets photo_14/21
 All sheets: slide + swipe down dismiss
-Portal columns: duration H:MM · % · navigate 06/07
+Portal columns: duration M:SS · % · navigate 06/07
 + sheet · Settings theme + export
 ```

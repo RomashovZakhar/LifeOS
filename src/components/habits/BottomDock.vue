@@ -134,7 +134,7 @@ defineEmits<{
   flex: 1 1 auto;
   min-width: 0;
   height: 48px;
-  padding: 0 20px;
+  padding: 0 var(--layout-gutter);
   border-radius: var(--radius-md);
   background: var(--color-cta-bg);
   color: var(--color-cta-fg);

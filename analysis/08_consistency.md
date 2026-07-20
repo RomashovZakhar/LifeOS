@@ -38,6 +38,7 @@
 | Пауза таймера: `pausedAt` + `pauseAccumulatedSeconds` | 04b, 06 |
 | Portal rename/delete — в Workouts ⋯, не H7 | 05, 06 |
 | C2 = bottom sheet; C1 = device/detail-каркас | 07 ≈ IA/05 паттерны |
+| W1–W5 = tall/nested sheets поверх home (`/?workout=`) | 06 (sheet shell 2026-07-20) |
 | Settings: theme + Export JSON; без marketing эталона | IA, 05, ANTI_GOALS |
 | UI язык RU | IA, 05–07, settings.locale |
 | Notes type отсутствует | везде |
@@ -136,7 +137,7 @@
 
 | Order | ID | Экран |
 |------|-----|--------|
-| 12 | — | Home: duration projection `H:MM`; жесты входа |
+| 12 | — | Home: duration projection `M:SS`; жесты входа |
 | 13 | W1 | Session A0/A1/B/C; Start/Finish; timer+pause; drag exercises; ⋯ portal |
 | 14 | W2 | Sets by mode; last time; autosave |
 | 15 | W3 | Add exercise + create catalog item |

@@ -169,7 +169,7 @@ function onRowTap(t: Tracker) {
   /* Sheet gray — not OLED black bg; rows use surface-3 on top */
   background: var(--color-surface-2);
   border-radius: 20px 20px 0 0;
-  padding: 4px 12px 0;
+  padding: 4px var(--layout-gutter) 0;
   box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.35);
   touch-action: pan-y;
   animation: today-up 0.32s cubic-bezier(0.22, 1, 0.36, 1);

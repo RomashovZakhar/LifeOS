@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import BottomSheet from '@/components/ui/BottomSheet.vue'
-import CloseButton from '@/components/ui/CloseButton.vue'
+import { computed, ref, watch } from "vue";
+import BottomSheet from "@/components/ui/BottomSheet.vue";
+import CloseButton from "@/components/ui/CloseButton.vue";
 import {
   checklistDayPercent,
   ensureChecklistDay,
@@ -10,83 +10,85 @@ import {
   type ChecklistDay,
   type Tracker,
   db,
-} from '@/db'
-import { useLiveQuery } from '@/composables/useLiveQuery'
-import { formatDateFullRu, isFutureDate } from '@/lib/calendar'
+} from "@/db";
+import { useLiveQuery } from "@/composables/useLiveQuery";
+import { formatDateFullRu, isFutureDate } from "@/lib/calendar";
 
 const props = defineProps<{
-  trackerId: string
-  date: string
-}>()
+  trackerId: string;
+  date: string;
+}>();
 
 const emit = defineEmits<{
-  close: []
+  close: [];
   /** Open C1 device to manage items. */
-  openDevice: []
-}>()
+  openDevice: [];
+}>();
 
-const today = todayDate()
-const futureHint = ref(false)
+const today = todayDate();
+const futureHint = ref(false);
 
 const tracker = useLiveQuery(
   async () => (await db.trackers.get(props.trackerId)) ?? null,
   undefined as Tracker | null | undefined,
   () => props.trackerId,
-)
+);
 
 const day = useLiveQuery(
   async () =>
     (await db.checklist_days
-      .where('[trackerId+date]')
+      .where("[trackerId+date]")
       .equals([props.trackerId, props.date])
       .first()) ?? null,
   null as ChecklistDay | null,
   () => `${props.trackerId}|${props.date}`,
-)
+);
 
-const isFuture = computed(() => isFutureDate(props.date, today))
+const isFuture = computed(() => isFutureDate(props.date, today));
 
-const percent = computed(() => (day.value ? checklistDayPercent(day.value) : null))
+const percent = computed(() =>
+  day.value ? checklistDayPercent(day.value) : null,
+);
 
 const subtitle = computed(() => {
-  const dateLabel = formatDateFullRu(props.date)
-  if (percent.value != null) return `${dateLabel} · ${percent.value}%`
-  return dateLabel
-})
+  const dateLabel = formatDateFullRu(props.date);
+  if (percent.value != null) return `${dateLabel} · ${percent.value}%`;
+  return dateLabel;
+});
 
 const showEmptyItems = computed(
   () =>
     !isFuture.value &&
     !futureHint.value &&
     !(day.value && day.value.lines.length > 0),
-)
+);
 
 watch(
   () => [props.trackerId, props.date, tracker.value] as const,
   async ([, , t]) => {
-    if (!t || t.type !== 'checklist') {
-      if (t !== undefined && t !== null) emit('close')
-      return
+    if (!t || t.type !== "checklist") {
+      if (t !== undefined && t !== null) emit("close");
+      return;
     }
-    if (isFutureDate(props.date, today)) return
-    await ensureChecklistDay(props.trackerId, props.date, today)
+    if (isFutureDate(props.date, today)) return;
+    await ensureChecklistDay(props.trackerId, props.date, today);
   },
   { immediate: true },
-)
+);
 
 async function onToggle(itemId: string) {
   if (isFuture.value) {
-    futureHint.value = true
+    futureHint.value = true;
     window.setTimeout(() => {
-      futureHint.value = false
-    }, 1600)
-    return
+      futureHint.value = false;
+    }, 1600);
+    return;
   }
-  await toggleChecklistLine(props.trackerId, props.date, itemId, today)
+  await toggleChecklistLine(props.trackerId, props.date, itemId, today);
 }
 
 function goAddItems() {
-  emit('openDevice')
+  emit("openDevice");
 }
 </script>
 

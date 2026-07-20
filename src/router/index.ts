@@ -1,4 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { todayDate } from '@/db/dates'
+
+function workoutDateFromQuery(query: Record<string, unknown>): string {
+  const d = query.date
+  return typeof d === 'string' && d ? d : todayDate()
+}
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,13 +27,38 @@ const router = createRouter({
     },
     {
       path: '/workout',
-      name: 'workout',
-      component: () => import('@/views/WorkoutView.vue'),
+      redirect: (to) => ({
+        path: '/',
+        query: { workout: workoutDateFromQuery(to.query) },
+      }),
+    },
+    {
+      path: '/workout/add',
+      redirect: (to) => ({
+        path: '/',
+        query: { workout: workoutDateFromQuery(to.query) },
+      }),
+    },
+    {
+      path: '/workout/e/:sessionExerciseId',
+      redirect: (to) => ({
+        path: '/',
+        query: { workout: workoutDateFromQuery(to.query) },
+      }),
     },
     {
       path: '/workout/templates',
-      name: 'workout-templates',
-      component: () => import('@/views/WorkoutTemplatesView.vue'),
+      redirect: (to) => ({
+        path: '/',
+        query: { workout: workoutDateFromQuery(to.query) },
+      }),
+    },
+    {
+      path: '/workout/templates/:templateId',
+      redirect: (to) => ({
+        path: '/',
+        query: { workout: workoutDateFromQuery(to.query) },
+      }),
     },
     {
       path: '/settings',

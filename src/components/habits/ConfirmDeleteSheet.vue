@@ -17,6 +17,7 @@ defineEmits<{
   <BottomSheet
     size="auto"
     :title="title || 'Удалить трекер?'"
+    :layer="100"
     @close="$emit('close')"
   >
     <p class="body">
@@ -27,7 +28,7 @@ defineEmits<{
         <button type="button" class="cancel" @click="$emit('close')">
           ОТМЕНА
         </button>
-        <button type="button" class="danger" @click="$emit('confirm')">
+        <button type="button" class="danger" @click="$emit('confirm'); $emit('close')">
           {{ confirmLabel || 'УДАЛИТЬ' }}
         </button>
       </div>

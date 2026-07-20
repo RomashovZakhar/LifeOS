@@ -4,15 +4,9 @@ import type {
   Tracker,
   WorkoutSession,
 } from '@/db'
+import { formatDurationMinSec } from '@/lib/workoutFormat'
 
 const EMPTY = '·'
-
-function formatDuration(seconds: number): string {
-  const totalMin = Math.floor(seconds / 60)
-  const h = Math.floor(totalMin / 60)
-  const m = totalMin % 60
-  return `${h}:${String(m).padStart(2, '0')}`
-}
 
 /** Integer for count; measure values always one decimal. */
 export function formatCountValue(value: number): string {
@@ -93,7 +87,7 @@ export function cellTextForTracker(
         session?.status === 'completed' &&
         session.durationSeconds != null
       ) {
-        return formatDuration(session.durationSeconds)
+        return formatDurationMinSec(session.durationSeconds)
       }
       return EMPTY
     }

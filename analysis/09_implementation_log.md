@@ -34,31 +34,39 @@
 
 **Статус:** ✅ утверждён (2026-07-20)
 
-Включая polish: detail sheet + sticky header, heatmap contrast/width, MonthGrid day-rail (без наезда символов), Time wheel ближе к центру (Apple-like).
-
 ---
 
 ## Phase 2 — Checklist (C1/C2)
 
-**Статус:** ⏳ на ревью (2026-07-20)
+**Статус:** ✅ утверждён (2026-07-20)
+
+---
+
+## Phase 3 — Workouts
+
+**Статус:** ⏳ на ревью (2026-07-20) · UI: sheets поверх home
 
 ### Сделано
 
-| Экран | Поведение |
-|-------|-----------|
-| Home | Cell / Today → C2 day sheet; Symbol → C1 device (`?detail=`); `%` / `·` уже в сетке |
-| C1 Device | Meta, range chips, ДНИ (done>0), heatmap, история «19 июл · 60%», пункты drag/rename/delete, + Пункт, ИЗМЕНИТЬ / УДАЛИТЬ cascade |
-| C2 Day | ensureDay + merge today; toggle autosave; done=0 → только дата; future locked; empty → «Сначала добавьте пункты» |
-| Data | `checklist.ts`: hard delete items (дни не трогаем); snapshot % |
+| ID | Поведение |
+|----|-----------|
+| Home | Duration `M:SS` для completed; Symbol/cell/Today → `/?workout=date` sheet |
+| W1 | Tall sheet A0/A1/B/C; Start / Finish; timer+pause; drag; ⋯; update-template |
+| W4/W5 | Nested sheets: подходы, каталог, шаблоны, редактор |
+| Catalog | ⋯ → Каталог: rename / archive / create; W3 без archive UI |
+| H6b | Edit duration sheet с W1-C |
+| Routes | `/workout*` → redirect на `/?workout=` |
 
 ### Проверить на ревью
 
-1. Symbol чеклиста → C1; ячейка/Today → C2 (не Completion).  
-2. + пункты → сегодня отметить → сетка `N%`; uncheck all → `·`.  
-3. Удалить пункт → прошлые дни/% целы; сегодня merge.  
-4. Drag порядка; история + heatmap → C2.  
-5. Удалить колонку → cascade items+days.
+1. Portal → sheet (не full page); swipe/✕/backdrop → home.  
+2. Начать → + упражнение → подходы → Закончить → `M:SS` в сетке.  
+3. Nested: W2/W3/templates поверх W1; закрытие nested не рвёт сессию.  
+4. **Delete confirm** поверх nested (упражнение / шаблон / сессия / портал) — кнопки кликабельны.  
+5. Пауза / длительность `M:SS`; из шаблона; drag; future locked.  
+6. ⋯ rename/delete portal; delete session → `·`.  
+7. ⋯ Каталог → rename / УБРАТЬ (archive) → нет в W3; прошлые сессии ок.
 
 ### Следующее после approve
 
-Phase 3 Workouts · H6b.
+Phase 4 Hardening · W6 не в V1.

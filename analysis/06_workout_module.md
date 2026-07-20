@@ -2,7 +2,7 @@
 
 **Входы:** 01–05, 04b (утверждены); PRODUCT, ANTI_GOALS  
 **Дата:** 2026-07-19  
-**Статус:** ✅ утверждён (2026-07-19; Q1–Q4 в §10; пауза в 04b)  
+**Статус:** ✅ утверждён (2026-07-19; Q1–Q4 в §10; пауза в 04b; sheet shell 2026-07-20)  
 **Язык UI:** русский  
 
 Полноценный модуль тренировок за колонкой-порталом Habits.  
@@ -51,8 +51,12 @@
 | Tap Symbol портала | W1 для `lastSelectedDate` (или today, если не выбран) |
 | Tap ячейки / Today portal | W1 для **этой** даты |
 
-Route-дух: `/workout?date=YYYY-MM-DD`.  
-Back/✕ → Habits home, тот же месяц/день.
+Route-дух: `/?workout=YYYY-MM-DD` (tall sheet поверх Habits home).  
+Legacy `/workout?date=` → redirect на тот же query.  
+Back/✕ / swipe / backdrop → Habits home, тот же месяц/день.
+
+**UI shell (2026-07-20):** W1–W5 — **bottom sheets** (как H7 / C1), не full-page routes.  
+W2 / W3 / W4 / W5 — nested sheets поверх W1.
 
 ---
 
@@ -63,7 +67,7 @@ Back/✕ → Habits home, тот же месяц/день.
 ```text
 ✕                         ⋯
 {Имя портала} · 19 июля
-[ таймер 0:00:00 | длительность 1:15 ]
+[ таймер 0:00:00 | длительность 21:34 ]
 
 состояние A: нет сессии / future
 состояние B: in_progress
@@ -144,10 +148,24 @@ Session в IDB; draft sheets подходов не нужны (autosave на W2)
 - Изменить название колонки (portal name)  
 - Изменить символ (portal symbol, max 5, unique)  
 - Шаблоны → W4  
+- **Каталог упражнений** → список active; rename; archive (`archivedAt`); create  
 - Удалить колонку тренировки → confirm («Удалятся все тренировки») → cascade sessions, portal tracker; exercises/templates остаются  
 - Удалить тренировку этого дня (если session есть) → confirm → delete session → A0; сетка `·`
 
----
+**Каталог упражнений (sheet):**
+
+```text
+Каталог                            ✕
+[ поиск ]
+  Жим лёжа          вес×повт    ✕
+  …
+[+ Новое упражнение]
+```
+
+- Tap строки → rename (режим учёта immutable)  
+- ✕ → confirm «Убрать из каталога?» → `archivedAt`; убрать id из всех `template.exerciseIds`; сессии не трогать  
+- W3 / W5 picker показывают только `!archivedAt`  
+- W2 «УДАЛИТЬ УПРАЖНЕНИЕ» — только из сессии, не из каталога  
 
 ### W2 — Упражнение в сессии
 
