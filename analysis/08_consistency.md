@@ -28,7 +28,7 @@
 | Тема | Где сходится |
 |------|----------------|
 | Hub + portals, 1× WorkoutPortal, N× Checklist | IA, 05, 06, 07 |
-| Ячейка workout = presence `x` если completed; нет Entry | IA, 04b, 05, 06 |
+| Ячейка workout = `…` in_progress / `x` completed; нет Entry | IA, 04b, 05, 06 |
 | Checklist % = снимок `checklist_days`; `done===0` → `·` | IA, 04b, 07 |
 | Hard delete checklist item; дни не каскадятся | 04b (working tree), 07 |
 | Cascade portal → sessions only; exercises/templates живут | IA, 04b, 05, 06 |
@@ -54,7 +54,7 @@
 | F5 | **Watch** | Light-тема в `03` — уровень C (зеркальная реконструкция). Риск визуального дрейфа на 09; не блочит Go. |
 | F6 | **Watch** | Mono + кириллица в сетке — выбор webfont на 09 (отложено в IA §13). |
 | F7 | **Watch** | PRODUCT «большинство ≤ 3 тапа»: Completion/checklist toggle/open sheet — ок; полный workout Start→sets→Finish длиннее — **норма для модуля**, не раздувать UI ради «уложиться в 3». |
-| F8 | **Watch** | Сессия `in_progress` → ячейка Habits остаётся `·` (04b). Ожидаемо; не добавлять badge «идёт» (антицель/шум). Вход — Symbol / Today. |
+| F8 | **Watch** | Сессия `in_progress` → ячейка Habits `…`; `completed` → `x` (04b). |
 | F9 | **Info** | Два входа edit duration: Habits **H6b** и Workouts **W1-C**. Не противоречие — один компонент/одна запись в IDB на 09. |
 | F10 | **Info** | Новые поверхности Workouts (W1–W5) и Checklist day — обоснованы в IA §7; визуально остаются токены/sheets/lists эталона. Лишних «дашбордов» нет. |
 
@@ -181,7 +181,7 @@ Import, sync, push, Notes, column reorder UI, exercise progress screen, system t
 One home · three capabilities · portals optional
 IDB truth · Export JSON · no sync
 · then value · no shame · no streaks
-Checklist snapshots · Workout presence `x`
+Checklist snapshots · Workout `…`/`x`
 Build: foundation → Habits ordinary → Checklist → Workouts → harden
 W6 out · fix ИЗМЕНИТЬ · rows not cards · commit analysis first
 ```

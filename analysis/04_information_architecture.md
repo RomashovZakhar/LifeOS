@@ -30,7 +30,7 @@ LifeOS
     │     tap day / Today     → log / checkbox / sheet
     │
     ├── Tracker (workout portal)  → тип WorkoutPortal  [max 1 на app]
-    │     ячейка дня          → `x` если completed session, иначе ·
+    │     ячейка дня          → `…` in_progress / `x` completed / иначе ·
     │     длительность        → на сессии / в Истории (не глиф сетки)
     │     tap Symbol          → модуль Workouts (день из выбранной строки)
     │     tap day / Today     → НЕ Completion; вход в сессию дня / edit длительности сессии
@@ -163,7 +163,7 @@ Type после создания **immutable** (менять нельзя).
 
 | Правило | Решение |
 |---------|---------|
-| Длительность в сетке | **Нет.** Completed → глиф `x`. `durationSeconds` — сессия / История (04b) |
+| Длительность в сетке | **Нет.** `in_progress` → `…`; `completed` → `x`. `durationSeconds` — сессия / История (04b) |
 | Ручной Completion | **Запрещён** на портале |
 | Секундомер | «Начать» → tick → «Закончить» → пишется `durationSeconds` на сессии → ячейка читает его |
 | Finish без упражнений | **Запрещён** |
@@ -181,7 +181,7 @@ Type после создания **immutable** (менять нельзя).
 - «Прошлый раз» при вводе: значения **последней сессии** этого упражнения.
 - Шаблоны: набор упражнений; старт = **пустая сессия** или **из шаблона**.
 - Правка текущей сессии (add/remove упражнения, подходы) **не меняет** шаблон сама по себе.
-- На **finish**: вопрос «Обновить шаблон?» (если старт был из шаблона / есть связанный шаблон — уточнить копирайт на 06).
+- На **finish**: вопрос «Обновить шаблон?» только если старт из шаблона **и** состав упражнений изменился (06).
 - Прогресс без дашбордов Health: через прошлый раз + историю в потоке упражнения.
 
 **Нет в V1:**
@@ -342,7 +342,7 @@ Type после создания **immutable** (менять нельзя).
 | 14 | Manual Completion на portal | **Нет** |
 | 15 | Finish без упражнений | **Запрещён** |
 | 16 | Старт сессии | Пустая **или** из шаблона |
-| 17 | Обновить шаблон? | Только на **finish** |
+| 17 | Обновить шаблон? | Только на **finish**, и только при отличии состава |
 | 18 | Types | Отдельные; повторный WorkoutPortal → disabled |
 | 19 | Delete portal | **Cascade сессий**; exercises/templates остаются |
 | 20 | Упражнение V1 | Имя + способ учёта (вес×reps / reps / время) |
@@ -397,7 +397,7 @@ Type после создания **immutable** (менять нельзя).
 
 ```text
 Habits grid = home
-WorkoutPortal (1) → Workouts · cell = completed presence `x` · duration on session · no Entry
+WorkoutPortal (1) → Workouts · cell = `…`/`x` · duration on session · no Entry
 Checklist (N) → device on Symbol · day snapshot · · then %
 Templates + one session/day · finish asks update template?
 RU · Export JSON · dark/light · no future logs · type locked · cascade sessions only

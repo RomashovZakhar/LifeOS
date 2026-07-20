@@ -251,9 +251,7 @@ async function onSubmit() {
         <span class="label">Тип</span>
         <ChipSelect v-model="type" :options="typeOptions" />
         <span v-if="isEdit" class="helper">Тип нельзя изменить</span>
-        <span v-else-if="portalTaken" class="helper"
-          >Тренировка уже добавлена</span
-        >
+        <span v-else-if="portalTaken" class="helper">Уже добавлена</span>
       </div>
 
       <div v-if="type === 'time'" class="field">

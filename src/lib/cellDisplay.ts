@@ -82,8 +82,8 @@ export function cellTextForTracker(
       return `${formatMeasureValue(entry.value.value)} ${unit}`
     }
     case 'workout_portal': {
-      // Presence only (like completion) — duration lives on session / history
       if (session?.status === 'completed') return 'x'
+      if (session?.status === 'in_progress') return '…'
       return EMPTY
     }
     case 'checklist': {

@@ -25,11 +25,13 @@ import {
   deleteTrackerCascade,
   elapsedSeconds,
   finishSession,
+  finishSessionWithDuration,
   getPortalTracker,
   listTemplates,
   pauseSession,
   reorderSessionExercises,
   resumeSession,
+  sessionDiffersFromTemplate,
   sessionHasValidFinish,
   setSummaryLine,
   startEmptySession,
@@ -178,15 +180,20 @@ async function onPauseResume() {
   else await pauseSession(s.id)
 }
 
+async function maybeAskUpdateTemplate(finished: WorkoutSession | null) {
+  if (!finished?.templateId) return
+  const t = await db.workout_templates.get(finished.templateId)
+  if (t && sessionDiffersFromTemplate(t, finished)) {
+    showUpdateTemplate.value = true
+  }
+}
+
 async function onFinish() {
   const s = session.value
   if (!s || !canFinish.value) return
   try {
     const finished = await finishSession(s.id)
-    if (finished?.templateId) {
-      const t = await db.workout_templates.get(finished.templateId)
-      if (t) showUpdateTemplate.value = true
-    }
+    await maybeAskUpdateTemplate(finished)
   } catch {
     flash('Добавьте хотя бы один подход')
   }
@@ -208,11 +215,35 @@ function openAdd() {
   showAdd.value = true
 }
 
+const durationSheetSeconds = computed(() => {
+  const s = session.value
+  if (!s) return 0
+  if (s.status === 'completed' && s.durationSeconds != null) {
+    return s.durationSeconds
+  }
+  if (s.status === 'in_progress') {
+    return elapsedSeconds(s, nowTick.value)
+  }
+  return 0
+})
+
 async function onSaveDuration(seconds: number) {
   const s = session.value
   if (!s) return
-  await updateSessionDuration(s.id, seconds)
-  showDuration.value = false
+  if (s.status === 'completed') {
+    await updateSessionDuration(s.id, seconds)
+    showDuration.value = false
+    return
+  }
+  if (s.status === 'in_progress') {
+    try {
+      const finished = await finishSessionWithDuration(s.id, seconds)
+      showDuration.value = false
+      await maybeAskUpdateTemplate(finished)
+    } catch {
+      flash('Добавьте хотя бы один подход')
+    }
+  }
 }
 
 async function onDeleteSessionConfirm() {
@@ -338,7 +369,7 @@ onUnmounted(() => {
 
       <div v-if="timerLabel" class="timer-block">
         <button
-          v-if="state === 'C'"
+          v-if="state === 'B' || state === 'C'"
           type="button"
           class="timer mono"
           @click="showDuration = true"
@@ -543,8 +574,8 @@ onUnmounted(() => {
   />
 
   <DurationEditSheet
-    v-if="showDuration && session?.durationSeconds != null"
-    :duration-seconds="session.durationSeconds"
+    v-if="showDuration && session && (state === 'B' || state === 'C')"
+    :duration-seconds="durationSheetSeconds"
     @close="showDuration = false"
     @save="onSaveDuration"
   />

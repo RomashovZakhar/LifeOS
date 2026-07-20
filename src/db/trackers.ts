@@ -30,12 +30,18 @@ export async function createTracker(input: {
   type: TrackerType
   config: TrackerConfig
 }): Promise<Tracker> {
+  const symbol = input.symbol.trim().toUpperCase()
+  if (!symbol || symbol.length > 5) throw new Error('Invalid symbol')
+  if (await isSymbolTaken(symbol)) throw new Error('Symbol taken')
+  if (input.type === 'workout_portal' && (await hasWorkoutPortal())) {
+    throw new Error('Workout portal already exists')
+  }
   const last = await db.trackers.orderBy('sortOrder').last()
   const sortOrder = (last?.sortOrder ?? -1) + 1
   const tracker: Tracker = {
     id: crypto.randomUUID(),
     name: input.name.trim(),
-    symbol: input.symbol.trim().toUpperCase(),
+    symbol,
     type: input.type,
     sortOrder,
     createdAt: new Date().toISOString(),
@@ -55,10 +61,13 @@ export async function updateTracker(
 ): Promise<Tracker> {
   const existing = await getTracker(id)
   if (!existing) throw new Error('Tracker not found')
+  const symbol = patch.symbol.trim().toUpperCase()
+  if (!symbol || symbol.length > 5) throw new Error('Invalid symbol')
+  if (await isSymbolTaken(symbol, id)) throw new Error('Symbol taken')
   const next: Tracker = {
     ...existing,
     name: patch.name.trim(),
-    symbol: patch.symbol.trim().toUpperCase(),
+    symbol,
     config: patch.config,
   }
   await db.trackers.put(next)

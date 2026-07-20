@@ -44,28 +44,40 @@
 
 ## Phase 3 — Workouts
 
-**Статус:** ⏳ на ревью (2026-07-20) · polish iteration
+**Статус:** ✅ утверждён (2026-07-20)
 
-### Сделано
+Sheets поверх home · History (Symbol) · Session (Cell/Today) · `…`/`x` · templates/catalog · update template? только при отличии состава · B tap timer → finish with duration.
 
-| ID | Поведение |
-|----|-----------|
-| Home | Symbol → История; Cell/Today → сессия; completed → `x` в сетке |
-| History | Stat тренировки + время; heatmap; список дней; ИЗМЕНИТЬ/УДАЛИТЬ |
-| W1 | A0 hint; B «Отменить» если 0 упражнений; C без «+ Упражнение» (⋯) |
-| W2 | Крупные inputs кг/повт; duration wheels мин/сек |
-| Catalog | ⋯ → rename / archive / create |
-| H6b | Edit duration `M:SS` |
+---
 
-### Проверить на ревью
+## Phase 4 — Hardening
 
-1. Symbol → история (не сессия); ячейка → день.  
-2. Heatmap / список → открывает сессию дня.  
-3. Случайный Начать → Отменить (пусто) → A0.  
-4. C: нет «+ Упражнение» на экране; есть в ⋯.  
-5. Duration exercise: wheels → `40:00`; weight/reps — крупные поля.  
-6. Finish → `x` в сетке; длительность — в сессии / Истории.
+**Статус:** ⏳ на ревью (2026-07-20)
+
+Большая часть 18–19 уже в коде Phases 1–3; дожаты write-path инварианты.
+
+### Сделано / проверено в коде
+
+| Order | Что | Статус |
+|------|-----|--------|
+| 18 | `lastViewedMonth` / `lastSelectedDate` restore + write-back | ✅ |
+| 18 | Timer kill/resume: wall-clock + pause fields (нет auto-pause on blur) | ✅ |
+| 19 | Cascade deletes (ordinary / checklist / portal→sessions) | ✅ |
+| 19 | Symbol collision UI + **write-path** `create`/`update` | ✅ |
+| 19 | ≤1 workout_portal UI + **write-path**; helper «Уже добавлена» | ✅ |
+| 20 | PWA / Apple meta / standalone | ✅ infra |
+| — | B: tap timer → задать длительность + завершить; grid `…` in_progress | ✅ |
+| — | W6 | не в V1 |
+
+### Проверить на ревью (ты)
+
+1. Перезагрузка → месяц/день как до ухода.  
+2. In-progress тренировка: закрыть вкладку / убить PWA → вернуться: таймер тикает (если не на паузе) или стоит (если пауза).  
+3. Удалить portal / checklist / ordinary → данные каскадом уходят как в 04b.  
+4. Дубликат Symbol → блок; второй «Тренировка» → chip disabled.  
+5. **Smoke на устройстве (20):** iPhone → Add to Home Screen → Airplane Mode → home / checklist / workout CRUD.  
+6. In-progress → сетка `…`; tap таймер → `45:00` → completed + `45:00` (не wall-clock).
 
 ### Следующее после approve
 
-Phase 4 Hardening · W6 progress per-exercise не в V1.
+V1 queue закрыта (08). Вне V1: import, sync, push, Notes, column reorder, W6, system theme follow.

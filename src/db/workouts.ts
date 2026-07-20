@@ -206,6 +206,38 @@ export async function finishSession(
   return next;
 }
 
+/** Finish with a user-entered duration (forgot finish / approximate time). */
+export async function finishSessionWithDuration(
+  id: string,
+  durationSeconds: number,
+): Promise<WorkoutSession | null> {
+  const s = await getSession(id);
+  if (!s || s.status !== "in_progress") return s ?? null;
+
+  const exercises = await db.exercises.toArray();
+  const modeById = new Map(exercises.map((e) => [e.id, e.trackingMode]));
+  if (!sessionHasValidFinish(s, modeById)) {
+    throw new Error("Finish validation failed");
+  }
+
+  let working = s;
+  if (working.pausedAt) {
+    const resumed = await resumeSession(id);
+    if (resumed) working = resumed;
+  }
+
+  const endedAt = new Date().toISOString();
+  const next: WorkoutSession = {
+    ...working,
+    status: "completed",
+    endedAt,
+    durationSeconds: Math.max(0, Math.floor(durationSeconds)),
+    pausedAt: null,
+  };
+  await putSession(next);
+  return next;
+}
+
 export async function updateSessionDuration(
   id: string,
   durationSeconds: number,
@@ -396,6 +428,24 @@ export async function deleteTemplate(id: string): Promise<void> {
   await db.workout_templates.delete(id);
 }
 
+/** Ordered exercise ids from session (by sortOrder). */
+export function sessionExerciseIds(session: WorkoutSession): string[] {
+  return [...session.exercises]
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((e) => e.exerciseId);
+}
+
+/** True if add/remove/reorder vs template.exerciseIds. */
+export function sessionDiffersFromTemplate(
+  template: WorkoutTemplate,
+  session: WorkoutSession,
+): boolean {
+  const ids = sessionExerciseIds(session);
+  const base = template.exerciseIds;
+  if (ids.length !== base.length) return true;
+  return ids.some((id, i) => id !== base[i]);
+}
+
 export async function syncTemplateFromSession(
   templateId: string,
   session: WorkoutSession,
@@ -404,9 +454,7 @@ export async function syncTemplateFromSession(
   if (!t) return;
   await putTemplate({
     ...t,
-    exerciseIds: [...session.exercises]
-      .sort((a, b) => a.sortOrder - b.sortOrder)
-      .map((e) => e.exerciseId),
+    exerciseIds: sessionExerciseIds(session),
   });
 }
 

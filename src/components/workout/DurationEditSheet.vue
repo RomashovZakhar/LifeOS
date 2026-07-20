@@ -31,7 +31,6 @@ const canSave = computed(() => parsed.value != null)
 function onSave() {
   if (parsed.value == null) return
   emit('save', parsed.value)
-  emit('close')
 }
 </script>
 

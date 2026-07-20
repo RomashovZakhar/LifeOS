@@ -213,7 +213,7 @@ type ChecklistDayLine = {
 | `pausedAt` | string ISO \| null | null = тикает; иначе момент постановки на паузу |
 | `pauseAccumulatedSeconds` | number | Сумма завершённых пауз (сек); default 0 |
 | `endedAt` | string ISO \| null | |
-| `durationSeconds` | number \| null | null пока in_progress; после finish = elapsed с учётом пауз; **редактируемо**; для UI сессии / Истории (**не** глиф сетки — там `x`) |
+| `durationSeconds` | number \| null | null пока in_progress; после finish = elapsed или ручной ввод; **редактируемо**; UI сессии / История (**не** глиф — там `…`/`x`) |
 | `templateId` | string \| null | Откуда стартовали (для «Обновить шаблон?») |
 | `exercises` | SessionExercise[] | Вложено |
 | `updatedAt` | string ISO | |
@@ -238,18 +238,18 @@ type SessionSet = {
 **Инварианты write-path:**
 
 - Finish запрещён, если нет ни одного упражнения **или** нет ни одного set (строго: ≥1 exercise и ≥1 set суммарно — зафиксируем: **≥1 exercise с ≥1 set**).  
-- Пока `in_progress`, `durationSeconds` не пишется в ячейку (UI `·`).  
+- Пока `in_progress`, в ячейке глиф `…` (не duration).  
 - Таймер: `elapsed = floor((t - startedAt)/1000) - pauseAccumulatedSeconds`, где `t = pausedAt ?? now`. Пауза/resume и kill — см. `06_workout_module.md`.  
 - После `completed`, правка `durationSeconds` не требует трогать Habit Entry.  
 - «Прошлый раз»: последняя `completed` сессия с `date < current` (или `< today`), где есть `exerciseId`, взять sets этого SessionExercise.  
-- «Обновить шаблон?» на finish: если `templateId` set → заменить `exerciseIds` шаблона на порядок `exercises[].exerciseId` текущей сессии.
+- «Обновить шаблон?» на finish: если `templateId` set **и** ids/порядок сессии ≠ `template.exerciseIds` → confirm → заменить на порядок `exercises[].exerciseId`.
 
 **Проекция в Habits grid для `workout_portal`:**
 
 ```text
 session = byDate(date)
-if session?.status === 'completed'
-  → 'x'   (presence, как completion)
+if session?.status === 'completed' → 'x'
+else if session?.status === 'in_progress' → '…'
 else → ·
 ```
 
@@ -375,7 +375,7 @@ workout_portal tracker ──presence── completed workout_sessions (glyph `x
 
 1. IndexedDB, `schemaVersion`, Export JSON всех stores.  
 2. Ordinary trackers → `entries`; portal/checklist **не** пишут ordinary entries.  
-3. Workout grid cell ← completed session → `x` (duration на сессии, не в глифе).  
+3. Workout grid cell ← `…` in_progress / `x` completed (duration на сессии).  
 4. Checklist % ← snapshot `checklist_days`; `·` если done=0.  
 5. Delete portal → delete sessions; keep exercises + templates.  
 6. Type / trackingMode immutable after create.  
