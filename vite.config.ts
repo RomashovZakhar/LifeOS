@@ -3,7 +3,11 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 
+/** Project Pages: https://<user>.github.io/LifeOS/ */
+const base = process.env.GITHUB_PAGES === 'true' ? '/LifeOS/' : '/'
+
 export default defineConfig({
+  base,
   plugins: [
     vue(),
     VitePWA({
@@ -18,7 +22,8 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         lang: 'ru',
-        start_url: '/',
+        start_url: './',
+        scope: './',
         icons: [
           {
             src: 'pwa-192.png',
@@ -40,7 +45,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        navigateFallback: '/index.html',
+        navigateFallback: `${base}index.html`,
       },
       devOptions: {
         enabled: true,
