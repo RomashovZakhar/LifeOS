@@ -32,28 +32,33 @@
 
 ## Phase 1.4 — H7 Detail + H8/H9 Settings
 
+**Статус:** ✅ утверждён (2026-07-20)
+
+Включая polish: detail sheet + sticky header, heatmap contrast/width, MonthGrid day-rail (без наезда символов), Time wheel ближе к центру (Apple-like).
+
+---
+
+## Phase 2 — Checklist (C1/C2)
+
 **Статус:** ⏳ на ревью (2026-07-20)
 
 ### Сделано
 
 | Экран | Поведение |
 |-------|-----------|
-| H7 Detail | Symbol ordinary → meta, range chips (fill), ЗАПИСИ, heatmap (~17 нед), список по месяцам, ИЗМЕНИТЬ / УДАЛИТЬ |
-| H7 Edit | NewTrackerSheet в edit: type locked, СОХРАНИТЬ |
-| H7 Delete | confirm sheet → cascade entries → home |
-| H7 entry | tap heatmap cell / history row → тот же entry sheet |
-| Guards | portal → `/workout`; checklist → `/` (ждёт Phase 2 C1) |
-| H8 Settings | Оформление › · Экспорт + toast «Файл готов» |
-| H9 Appearance | Тёмная / Светлая → settings.theme |
+| Home | Cell / Today → C2 day sheet; Symbol → C1 device (`?detail=`); `%` / `·` уже в сетке |
+| C1 Device | Meta, range chips, ДНИ (done>0), heatmap, история «19 июл · 60%», пункты drag/rename/delete, + Пункт, ИЗМЕНИТЬ / УДАЛИТЬ cascade |
+| C2 Day | ensureDay + merge today; toggle autosave; done=0 → только дата; future locked; empty → «Сначала добавьте пункты» |
+| Data | `checklist.ts`: hard delete items (дни не трогаем); snapshot % |
 
 ### Проверить на ревью
 
-1. Detail vs `photo_24`/`25` (heatmap, chips fill, actions).  
-2. Range меняет count + list; heatmap — последние ~4 мес.  
-3. ИЗМЕНИТЬ / УДАЛИТЬ cascade.  
-4. Settings → Appearance; Export toast.  
-5. Checklist/portal Symbol не открывают ordinary detail.
+1. Symbol чеклиста → C1; ячейка/Today → C2 (не Completion).  
+2. + пункты → сегодня отметить → сетка `N%`; uncheck all → `·`.  
+3. Удалить пункт → прошлые дни/% целы; сегодня merge.  
+4. Drag порядка; история + heatmap → C2.  
+5. Удалить колонку → cascade items+days.
 
 ### Следующее после approve
 
-Phase 2 Checklist (C1/C2) · Phase 3 Workouts · H6b.
+Phase 3 Workouts · H6b.

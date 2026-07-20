@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import type { Tracker } from "@/db";
 import type { GridDay } from "@/lib/calendar";
 
@@ -12,8 +12,10 @@ const props = withDefaults(
     cellText: (trackerId: string, date: string) => string;
     /** Soft wash на выбранной строке (split + Today, как эталон) */
     highlightSelected?: boolean;
+    /** Extra scrollable space under last row (Today overlay height). */
+    bottomInset?: number;
   }>(),
-  { highlightSelected: false },
+  { highlightSelected: false, bottomInset: 0 },
 );
 
 const emit = defineEmits<{
@@ -30,6 +32,7 @@ const DAY_W_PX = 66;
 const ROW_H_PX = 34;
 const HEAD_H_PX = 40;
 
+const scrollRoot = ref<HTMLElement | null>(null);
 const rowRefs = new Map<string, HTMLElement>();
 
 function setRowRef(date: string, el: Element | null) {
@@ -48,6 +51,7 @@ const trackStyle = computed(() => {
     "--n": String(n),
     "--row-h": `${ROW_H_PX}px`,
     "--head-h": `${HEAD_H_PX}px`,
+    "--bottom-inset": `${Math.max(0, props.bottomInset)}px`,
   } as Record<string, string>;
 });
 
@@ -70,32 +74,57 @@ function isEmptyGlyph(text: string) {
   return text === "·";
 }
 
-async function scrollSelectedIntoView() {
+/** Scroll only inside `.grid-scroll`, accounting for overlay inset. */
+async function ensureSelectedVisible() {
   await nextTick();
-  const el = rowRefs.get(props.selectedDate);
-  el?.scrollIntoView({ block: "center", behavior: "smooth" });
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => resolve());
+  });
+
+  const root = scrollRoot.value;
+  const el =
+    rowRefs.get(props.selectedDate) ??
+    root?.querySelector<HTMLElement>(`[data-date="${props.selectedDate}"]`);
+  if (!root || !el) return;
+
+  const rootRect = root.getBoundingClientRect();
+  const elRect = el.getBoundingClientRect();
+  const pad = 6;
+  const visibleBottom = rootRect.bottom - Math.max(0, props.bottomInset);
+  let delta = 0;
+  if (elRect.top < rootRect.top + pad) {
+    delta = elRect.top - rootRect.top - pad;
+  } else if (elRect.bottom > visibleBottom - pad) {
+    delta = elRect.bottom - visibleBottom + pad;
+  } else {
+    return;
+  }
+
+  const max = Math.max(0, root.scrollHeight - root.clientHeight);
+  const next = Math.min(max, Math.max(0, root.scrollTop + delta));
+  if (Math.abs(next - root.scrollTop) < 1) return;
+  root.scrollTo({ top: next, behavior: "smooth" });
 }
 
 watch(
-  () => props.selectedDate,
+  () =>
+    [
+      props.selectedDate,
+      props.days,
+      props.highlightSelected,
+      props.bottomInset,
+    ] as const,
   () => {
-    void scrollSelectedIntoView();
+    void ensureSelectedVisible();
   },
 );
 
-watch(
-  () => props.days,
-  () => {
-    void scrollSelectedIntoView();
-  },
-);
-
-defineExpose({ scrollSelectedIntoView });
+defineExpose({ scrollSelectedIntoView: ensureSelectedVisible });
 </script>
 
 <template>
   <div class="grid-well" @click="onWellClick">
-    <div class="grid-scroll">
+    <div ref="scrollRoot" class="grid-scroll">
       <div
         class="track"
         :class="{ 'has-trackers': hasTrackers }"
@@ -109,6 +138,7 @@ defineExpose({ scrollSelectedIntoView });
             :key="d.date"
             type="button"
             class="day-label"
+            :data-date="d.date"
             :class="{ weekend: d.isWeekend, selected: isSelected(d.date) }"
             @click="emit('selectDate', d.date)"
           >
@@ -143,6 +173,7 @@ defineExpose({ scrollSelectedIntoView });
             :key="d.date"
             :ref="(el) => setRowRef(d.date, el as Element | null)"
             class="data-row"
+            :data-date="d.date"
             :class="{ weekend: d.isWeekend, selected: isSelected(d.date) }"
           >
             <div class="cols">
@@ -185,7 +216,8 @@ defineExpose({ scrollSelectedIntoView });
   box-sizing: border-box;
   width: 100%;
   min-width: 100%;
-  padding: 0 0 12px;
+  /* 12px base + overlay inset so last rows can scroll above Today */
+  margin: 0 0 calc(12px + var(--bottom-inset, 0px));
 }
 
 .track.has-trackers {

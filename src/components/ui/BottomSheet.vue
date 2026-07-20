@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
+import {
+  SHEET_DISMISS_LOCK_KEY,
+  type SheetDismissLock,
+} from '@/composables/sheetDismissLock'
 import { useSwipeDismiss } from '@/composables/useSwipeDismiss'
 
 withDefaults(
@@ -18,10 +22,23 @@ const emit = defineEmits<{
 
 const open = ref(false)
 const leaving = ref(false)
+const dismissLocked = ref(false)
 let leaveTimer: number | undefined
 
 const { dragY, dragging, onTouchStart, onTouchMove, onTouchEnd, reset } =
   useSwipeDismiss(() => requestClose())
+
+const dismissLockApi: SheetDismissLock = {
+  lock: () => {
+    dismissLocked.value = true
+    dragging.value = false
+    dragY.value = 0
+  },
+  unlock: () => {
+    dismissLocked.value = false
+  },
+}
+provide(SHEET_DISMISS_LOCK_KEY, dismissLockApi)
 
 const panelStyle = computed(() => {
   if (leaving.value) {
@@ -42,7 +59,7 @@ const panelStyle = computed(() => {
 })
 
 function requestClose() {
-  if (leaving.value) return
+  if (leaving.value || dismissLocked.value) return
   leaving.value = true
   open.value = false
   dragging.value = false
@@ -54,6 +71,24 @@ function requestClose() {
 }
 
 provide('sheetClose', requestClose)
+
+function onChromeTouchStart(e: TouchEvent) {
+  if (dismissLocked.value) return
+  onTouchStart(e)
+}
+
+function onChromeTouchMove(e: TouchEvent) {
+  if (dismissLocked.value) return
+  onTouchMove(e)
+}
+
+function onChromeTouchEnd() {
+  if (dismissLocked.value) {
+    reset()
+    return
+  }
+  onTouchEnd()
+}
 
 function onKey(e: KeyboardEvent) {
   if (e.key === 'Escape') requestClose()
@@ -94,32 +129,37 @@ defineExpose({ requestClose })
       aria-modal="true"
       :aria-label="ariaLabel || title || 'Sheet'"
       :style="panelStyle"
-      @touchstart.passive="onTouchStart"
-      @touchmove="onTouchMove"
-      @touchend="onTouchEnd"
-      @touchcancel="onTouchEnd"
     >
-      <div class="grab" aria-hidden="true" />
-      <header v-if="title" class="header">
-        <h2 class="title">{{ title }}</h2>
-        <button
-          type="button"
-          class="close"
-          aria-label="Закрыть"
-          @click="requestClose"
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-            <path
-              d="M2 2L12 12M12 2L2 12"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-            />
-          </svg>
-        </button>
-      </header>
-      <div v-if="$slots.header" class="header-slot">
-        <slot name="header" />
+      <!-- Swipe-dismiss только с chrome: body/list не закрывают sheet -->
+      <div
+        class="chrome"
+        @touchstart.passive="onChromeTouchStart"
+        @touchmove="onChromeTouchMove"
+        @touchend="onChromeTouchEnd"
+        @touchcancel="onChromeTouchEnd"
+      >
+        <div class="grab" aria-hidden="true" />
+        <header v-if="title" class="header">
+          <h2 class="title">{{ title }}</h2>
+          <button
+            type="button"
+            class="close"
+            aria-label="Закрыть"
+            @click="requestClose"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path
+                d="M2 2L12 12M12 2L2 12"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </header>
+        <div v-if="$slots.header" class="header-slot">
+          <slot name="header" />
+        </div>
       </div>
       <div class="body">
         <slot />
@@ -195,6 +235,11 @@ defineExpose({ requestClose })
 
 .panel.auto {
   max-height: min(88dvh, 100%);
+}
+
+.chrome {
+  flex: 0 0 auto;
+  touch-action: none;
 }
 
 .grab {

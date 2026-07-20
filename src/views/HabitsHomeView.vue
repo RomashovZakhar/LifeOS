@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BottomDock from '@/components/habits/BottomDock.vue'
+import ChecklistDaySheet from '@/components/habits/ChecklistDaySheet.vue'
+import ChecklistDeviceSheet from '@/components/habits/ChecklistDeviceSheet.vue'
 import CompletionEntrySheet from '@/components/habits/CompletionEntrySheet.vue'
 import MonthGrid from '@/components/habits/MonthGrid.vue'
 import MonthYearTitle from '@/components/habits/MonthYearTitle.vue'
@@ -42,6 +44,9 @@ const showNewTracker = ref(false)
 const todayOpen = ref(false)
 const futureHintFlash = ref(false)
 const entryTarget = ref<{ tracker: Tracker; date: string } | null>(null)
+const checklistDayTarget = ref<{ trackerId: string; date: string } | null>(
+  null,
+)
 
 const today = todayDateFn()
 const viewedMonth = ref(settings.lastViewedMonth || monthFromDate(today))
@@ -153,6 +158,27 @@ const detailTrackerId = computed(() => {
   return typeof v === 'string' && v ? v : null
 })
 
+/** Kind from already-loaded trackers — avoid stale liveQuery null closing the sheet. */
+const detailKind = computed(() => {
+  const id = detailTrackerId.value
+  if (!id) return null
+  const t = trackers.value.find((x) => x.id === id)
+  if (!t) return 'loading' as const
+  if (t.type === 'checklist') return 'checklist' as const
+  if (t.type === 'workout_portal') return 'portal' as const
+  return 'ordinary' as const
+})
+
+watch(detailKind, (kind) => {
+  if (kind === 'portal') closeDetail()
+})
+
+watch(detailTrackerId, async (id) => {
+  if (!id) return
+  const t = await db.trackers.get(id)
+  if (!t) closeDetail()
+})
+
 function openDetail(trackerId: string) {
   void router.push({
     path: '/',
@@ -197,11 +223,21 @@ function onOpenSymbol(tracker: Tracker) {
     void router.push({ path: '/workout', query: { date: selectedDate.value } })
     return
   }
-  if (tracker.type === 'checklist') {
-    // C1 — Phase 2
-    return
-  }
   openDetail(tracker.id)
+}
+
+function openChecklistDay(trackerId: string, date: string) {
+  checklistDayTarget.value = { trackerId, date }
+}
+
+function closeChecklistDay() {
+  checklistDayTarget.value = null
+}
+
+function openDeviceFromDay() {
+  const id = checklistDayTarget.value?.trackerId
+  closeChecklistDay()
+  if (id) openDetail(id)
 }
 
 function openEntrySheet(tracker: Tracker, date: string) {
@@ -226,7 +262,7 @@ function onOpenCell(payload: { tracker: Tracker; date: string }) {
     return
   }
   if (payload.tracker.type === 'checklist') {
-    // C1 — Phase 2
+    openChecklistDay(payload.tracker.id, payload.date)
     return
   }
 
@@ -251,7 +287,7 @@ function onOpenFromToday(tracker: Tracker) {
     return
   }
   if (tracker.type === 'checklist') {
-    // C1 — Phase 2
+    openChecklistDay(tracker.id, selectedDate.value)
     return
   }
   openEntrySheet(tracker, selectedDate.value)
@@ -267,10 +303,34 @@ function flashFutureHint() {
 const entryTracker = computed(() => entryTarget.value?.tracker ?? null)
 const entryDate = computed(() => entryTarget.value?.date ?? '')
 const entryType = computed(() => entryTracker.value?.type)
+
+/** Real Today panel height → scroll content inset (viewport stays full). */
+const todayWrap = ref<HTMLElement | null>(null)
+const todayInsetPx = ref(0)
+let todayRo: ResizeObserver | undefined
+
+watch(todayWrap, (el) => {
+  todayRo?.disconnect()
+  todayRo = undefined
+  if (!el) {
+    todayInsetPx.value = 0
+    return
+  }
+  const measure = () => {
+    todayInsetPx.value = Math.round(el.getBoundingClientRect().height)
+  }
+  todayRo = new ResizeObserver(measure)
+  todayRo.observe(el)
+  measure()
+})
+
+onUnmounted(() => {
+  todayRo?.disconnect()
+})
 </script>
 
 <template>
-  <div class="home" :class="{ split: todayOpen }">
+  <div class="home">
     <header class="top">
       <MonthYearTitle :name="title.name" :year="title.year" />
     </header>
@@ -283,26 +343,28 @@ const entryType = computed(() => entryTracker.value?.type)
       :today-date="today"
       :cell-text="cellText"
       :highlight-selected="todayOpen"
+      :bottom-inset="todayOpen ? todayInsetPx : 0"
       @select-date="onSelectDate"
       @open-symbol="onOpenSymbol"
       @open-cell="onOpenCell"
       @dismiss="closeToday"
     />
 
-    <TodayPanel
-      v-if="todayOpen"
-      class="today"
-      :date="selectedDate"
-      :today-date="today"
-      :trackers="trackers"
-      :entry-map="entryMap"
-      :session-by-date="sessionByDate"
-      :checklist-map="checklistMap"
-      @close="closeToday"
-      @toggle-completion="onToggleCompletion"
-      @open-tracker="onOpenFromToday"
-      @future-hint="flashFutureHint"
-    />
+    <div v-if="todayOpen" ref="todayWrap" class="today-layer">
+      <TodayPanel
+        class="today"
+        :date="selectedDate"
+        :today-date="today"
+        :trackers="trackers"
+        :entry-map="entryMap"
+        :session-by-date="sessionByDate"
+        :checklist-map="checklistMap"
+        @close="closeToday"
+        @toggle-completion="onToggleCompletion"
+        @open-tracker="onOpenFromToday"
+        @future-hint="flashFutureHint"
+      />
+    </div>
 
     <p v-if="futureHintFlash && !todayOpen" class="toast">
       Нельзя отметить будущий день
@@ -318,8 +380,14 @@ const entryType = computed(() => entryTracker.value?.type)
       />
     </footer>
 
+    <ChecklistDeviceSheet
+      v-if="detailKind === 'checklist' && detailTrackerId"
+      :tracker-id="detailTrackerId"
+      @close="closeDetail"
+      @deleted="closeDetail"
+    />
     <TrackerDetailSheet
-      v-if="detailTrackerId"
+      v-else-if="detailKind === 'ordinary' && detailTrackerId"
       :tracker-id="detailTrackerId"
       @close="closeDetail"
       @deleted="closeDetail"
@@ -329,6 +397,14 @@ const entryType = computed(() => entryTracker.value?.type)
       v-if="showNewTracker"
       @close="closeNewTracker"
       @created="closeNewTracker"
+    />
+
+    <ChecklistDaySheet
+      v-if="checklistDayTarget"
+      :tracker-id="checklistDayTarget.trackerId"
+      :date="checklistDayTarget.date"
+      @close="closeChecklistDay"
+      @open-device="openDeviceFromDay"
     />
 
     <CompletionEntrySheet
@@ -373,10 +449,6 @@ const entryType = computed(() => entryTracker.value?.type)
   box-sizing: border-box;
 }
 
-.home.split {
-  padding-bottom: 0;
-}
-
 .top {
   flex: 0 0 auto;
   padding-top: 4px;
@@ -388,23 +460,19 @@ const entryType = computed(() => entryTracker.value?.type)
   min-height: 0;
 }
 
-/* Today — оверлей снизу: сетка остаётся полной под панелью при swipe-close */
-.home.split .grid {
-  flex: 1 1 auto;
-  max-height: none;
-  padding-bottom: min(46vh, 380px);
-}
-
-.today {
+/* Overlay: не сжимает viewport сетки */
+.today-layer {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 15;
-  width: auto;
+  pointer-events: none;
+}
+
+.today-layer :deep(.today) {
+  pointer-events: auto;
   max-height: min(46vh, 380px);
-  min-height: 0;
-  margin: 0;
 }
 
 .bottom {
