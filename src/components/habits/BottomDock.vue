@@ -140,7 +140,7 @@ defineEmits<{
   color: var(--color-cta-fg);
   font-family: var(--font-mono);
   font-size: var(--type-cta);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.06em;
   transition: opacity 0.12s ease;
 }

@@ -1,101 +1,99 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import EntrySheetShell from '@/components/habits/EntrySheetShell.vue'
-import {
-  deleteEntryById,
-  getEntry,
-  upsertEntry,
-  type Tracker,
-} from '@/db'
+import { computed, onMounted, ref } from "vue";
+import EntrySheetShell from "@/components/habits/EntrySheetShell.vue";
+import { deleteEntryById, getEntry, upsertEntry, type Tracker } from "@/db";
 
 const props = defineProps<{
-  tracker: Tracker
-  date: string
-}>()
+  tracker: Tracker;
+  date: string;
+}>();
 
 const emit = defineEmits<{
-  close: []
-  saved: []
-}>()
+  close: [];
+  saved: [];
+}>();
 
-const kind = computed(() => props.tracker.type as 'count' | 'distance' | 'weight')
+const kind = computed(
+  () => props.tracker.type as "count" | "distance" | "weight",
+);
 const allowDecimal = computed(
-  () => kind.value === 'distance' || kind.value === 'weight',
-)
+  () => kind.value === "distance" || kind.value === "weight",
+);
 
 const unitLabel = computed(() => {
-  const cfg = props.tracker.config
-  if (cfg && 'unit' in cfg && cfg.unit) return String(cfg.unit).toLowerCase()
-  if (kind.value === 'distance') return 'km'
-  if (kind.value === 'weight') return 'kg'
-  return ''
-})
+  const cfg = props.tracker.config;
+  if (cfg && "unit" in cfg && cfg.unit) return String(cfg.unit).toLowerCase();
+  if (kind.value === "distance") return "km";
+  if (kind.value === "weight") return "kg";
+  return "";
+});
 
-const display = ref('0')
-const entryId = ref<string | null>(null)
-const isEdit = computed(() => entryId.value != null)
+const display = ref("0");
+const entryId = ref<string | null>(null);
+const isEdit = computed(() => entryId.value != null);
 
 onMounted(async () => {
-  const e = await getEntry(props.tracker.id, props.date)
-  if (!e) return
-  entryId.value = e.id
-  if (e.value.kind === 'count') display.value = String(e.value.value)
-  if (e.value.kind === 'distance' || e.value.kind === 'weight') {
-    display.value = e.value.value.toFixed(1)
+  const e = await getEntry(props.tracker.id, props.date);
+  if (!e) return;
+  entryId.value = e.id;
+  if (e.value.kind === "count") display.value = String(e.value.value);
+  if (e.value.kind === "distance" || e.value.kind === "weight") {
+    display.value = e.value.value.toFixed(1);
   }
-})
+});
 
 function bump(delta: number) {
-  const n = Number(display.value) || 0
+  const n = Number(display.value) || 0;
   if (allowDecimal.value) {
-    const next = Math.max(0, Math.round((n + delta) * 10) / 10)
-    display.value = next.toFixed(1)
-    return
+    const next = Math.max(0, Math.round((n + delta) * 10) / 10);
+    display.value = next.toFixed(1);
+    return;
   }
-  display.value = String(Math.max(0, Math.round(n + delta)))
+  display.value = String(Math.max(0, Math.round(n + delta)));
 }
 
 function key(k: string) {
-  if (k === 'back') {
-    display.value = display.value.length <= 1 ? '0' : display.value.slice(0, -1)
-    return
+  if (k === "back") {
+    display.value =
+      display.value.length <= 1 ? "0" : display.value.slice(0, -1);
+    return;
   }
-  if (k === '.') {
-    if (!allowDecimal.value) return
-    if (display.value.includes('.')) return
-    display.value = `${display.value}.`
-    return
+  if (k === ".") {
+    if (!allowDecimal.value) return;
+    if (display.value.includes(".")) return;
+    display.value = `${display.value}.`;
+    return;
   }
-  if (display.value === '0' && k !== '.') display.value = k
-  else display.value += k
+  if (display.value === "0" && k !== ".") display.value = k;
+  else display.value += k;
 }
 
 async function onSave() {
-  const value = Number(display.value)
-  if (Number.isNaN(value)) return
-  const type = kind.value
-  if (type === 'count') {
+  const value = Number(display.value);
+  if (Number.isNaN(value)) return;
+  const type = kind.value;
+  if (type === "count") {
     await upsertEntry(props.tracker.id, props.date, {
-      kind: 'count',
+      kind: "count",
       value: Math.round(value),
-    })
+    });
   } else {
     await upsertEntry(props.tracker.id, props.date, {
       kind: type,
       value,
-    })
+    });
   }
-  emit('saved')
-  emit('close')
+  emit("saved");
+  emit("close");
 }
 
 async function onDelete() {
-  if (entryId.value) await deleteEntryById(entryId.value)
-  emit('saved')
-  emit('close')
+  if (entryId.value) await deleteEntryById(entryId.value);
+  emit("saved");
+  emit("close");
 }
 
-const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9'] as const
+const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9"] as const;
 </script>
 
 <template>
@@ -107,9 +105,18 @@ const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9'] as const
     <div class="stepper-card">
       <p v-if="unitLabel" class="unit">{{ unitLabel }}</p>
       <div class="stepper">
-        <button type="button" class="step" aria-label="Меньше" @click="bump(-1)">−</button>
+        <button
+          type="button"
+          class="step"
+          aria-label="Меньше"
+          @click="bump(-1)"
+        >
+          −
+        </button>
         <span class="value mono">{{ display }}</span>
-        <button type="button" class="step" aria-label="Больше" @click="bump(1)">+</button>
+        <button type="button" class="step" aria-label="Больше" @click="bump(1)">
+          +
+        </button>
       </div>
     </div>
 
@@ -133,7 +140,12 @@ const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9'] as const
       </button>
       <span v-else class="key spacer" />
       <button type="button" class="key mono" @click="key('0')">0</button>
-      <button type="button" class="key" aria-label="Стереть" @click="key('back')">
+      <button
+        type="button"
+        class="key"
+        aria-label="Стереть"
+        @click="key('back')"
+      >
         ⌫
       </button>
     </div>
@@ -158,7 +170,7 @@ const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9'] as const
           </svg>
         </button>
         <button type="button" class="primary" @click="onSave">
-          {{ isEdit ? 'ОБНОВИТЬ' : 'ОТСЛЕДИТЬ' }}
+          {{ isEdit ? "ОБНОВИТЬ" : "ОТСЛЕДИТЬ" }}
         </button>
       </div>
     </template>
@@ -239,8 +251,9 @@ const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9'] as const
   border-radius: var(--radius-md);
   background: var(--color-cta-bg);
   color: var(--color-cta-fg);
+  font-family: var(--font-mono);
   font-size: var(--type-cta);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.04em;
 }
 
