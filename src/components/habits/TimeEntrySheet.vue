@@ -1,88 +1,83 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
-import EntrySheetShell from '@/components/habits/EntrySheetShell.vue'
-import {
-  deleteEntryById,
-  getEntry,
-  upsertEntry,
-  type Tracker,
-} from '@/db'
+import { computed, nextTick, onMounted, ref } from "vue";
+import EntrySheetShell from "@/components/habits/EntrySheetShell.vue";
+import { deleteEntryById, getEntry, upsertEntry, type Tracker } from "@/db";
 
 const props = defineProps<{
-  tracker: Tracker
-  date: string
-}>()
+  tracker: Tracker;
+  date: string;
+}>();
 
 const emit = defineEmits<{
-  close: []
-  saved: []
-}>()
+  close: [];
+  saved: [];
+}>();
 
-const hours = Array.from({ length: 24 }, (_, i) => i)
-const minutes = Array.from({ length: 60 }, (_, i) => i)
+const hours = Array.from({ length: 24 }, (_, i) => i);
+const minutes = Array.from({ length: 60 }, (_, i) => i);
 
-const hour = ref(7)
-const minute = ref(40)
-const nextDay = ref(false)
-const entryId = ref<string | null>(null)
-const isEdit = computed(() => entryId.value != null)
+const hour = ref(7);
+const minute = ref(40);
+const nextDay = ref(false);
+const entryId = ref<string | null>(null);
+const isEdit = computed(() => entryId.value != null);
 
-const hourList = ref<HTMLElement | null>(null)
-const minuteList = ref<HTMLElement | null>(null)
-const ITEM = 40
+const hourList = ref<HTMLElement | null>(null);
+const minuteList = ref<HTMLElement | null>(null);
+const ITEM = 40;
 
 onMounted(async () => {
-  const e = await getEntry(props.tracker.id, props.date)
-  if (e?.value.kind === 'time') {
-    hour.value = Math.floor(e.value.minutesOfDay / 60)
-    minute.value = e.value.minutesOfDay % 60
-    nextDay.value = e.value.nextDay
-    entryId.value = e.id
+  const e = await getEntry(props.tracker.id, props.date);
+  if (e?.value.kind === "time") {
+    hour.value = Math.floor(e.value.minutesOfDay / 60);
+    minute.value = e.value.minutesOfDay % 60;
+    nextDay.value = e.value.nextDay;
+    entryId.value = e.id;
   }
-  await nextTick()
-  scrollToValue(hourList.value, hour.value)
-  scrollToValue(minuteList.value, minute.value)
-})
+  await nextTick();
+  scrollToValue(hourList.value, hour.value);
+  scrollToValue(minuteList.value, minute.value);
+});
 
 function scrollToValue(el: HTMLElement | null, value: number) {
-  if (!el) return
-  el.scrollTop = value * ITEM
+  if (!el) return;
+  el.scrollTop = value * ITEM;
 }
 
 function onHourScroll() {
-  if (!hourList.value) return
+  if (!hourList.value) return;
   hour.value = Math.min(
     23,
     Math.max(0, Math.round(hourList.value.scrollTop / ITEM)),
-  )
+  );
 }
 
 function onMinuteScroll() {
-  if (!minuteList.value) return
+  if (!minuteList.value) return;
   minute.value = Math.min(
     59,
     Math.max(0, Math.round(minuteList.value.scrollTop / ITEM)),
-  )
+  );
 }
 
 function pad(n: number) {
-  return String(n).padStart(2, '0')
+  return String(n).padStart(2, "0");
 }
 
 async function onSave() {
   await upsertEntry(props.tracker.id, props.date, {
-    kind: 'time',
+    kind: "time",
     minutesOfDay: hour.value * 60 + minute.value,
     nextDay: nextDay.value,
-  })
-  emit('saved')
-  emit('close')
+  });
+  emit("saved");
+  emit("close");
 }
 
 async function onDelete() {
-  if (entryId.value) await deleteEntryById(entryId.value)
-  emit('saved')
-  emit('close')
+  if (entryId.value) await deleteEntryById(entryId.value);
+  emit("saved");
+  emit("close");
 }
 </script>
 
@@ -95,18 +90,14 @@ async function onDelete() {
     <div class="wheel-wrap">
       <div class="wheel">
         <div class="highlight" aria-hidden="true" />
-        <div
-          ref="hourList"
-          class="col mono"
-          @scroll.passive="onHourScroll"
-        >
+        <div ref="hourList" class="col hours" @scroll.passive="onHourScroll">
           <div class="pad" />
           <div v-for="h in hours" :key="h" class="item">{{ pad(h) }}</div>
           <div class="pad" />
         </div>
         <div
           ref="minuteList"
-          class="col mono"
+          class="col minutes"
           @scroll.passive="onMinuteScroll"
         >
           <div class="pad" />
@@ -141,7 +132,7 @@ async function onDelete() {
           </svg>
         </button>
         <button type="button" class="primary" @click="onSave">
-          {{ isEdit ? 'ОБНОВИТЬ' : 'ОТСЛЕДИТЬ' }}
+          {{ isEdit ? "ОБНОВИТЬ" : "ОТСЛЕДИТЬ" }}
         </button>
       </div>
     </template>
@@ -181,7 +172,6 @@ async function onDelete() {
   overflow-y: auto;
   scroll-snap-type: y mandatory;
   -webkit-overflow-scrolling: touch;
-  text-align: center;
   position: relative;
   z-index: 1;
   scrollbar-width: none;
@@ -191,9 +181,24 @@ async function onDelete() {
   display: none;
 }
 
+.col.hours .item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 24px;
+  box-sizing: border-box;
+}
+
+.col.minutes .item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-left: 24px;
+  box-sizing: border-box;
+}
+
 .item {
   height: 40px;
-  line-height: 40px;
   font-size: 1.375rem;
   font-weight: 500;
   color: var(--color-text-primary);
@@ -224,7 +229,7 @@ async function onDelete() {
 }
 
 .toggle::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 3px;
   left: 3px;
