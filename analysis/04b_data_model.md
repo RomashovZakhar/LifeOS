@@ -12,7 +12,7 @@
 
 | Риск | Плохой путь | Выбранный путь |
 |------|-------------|----------------|
-| Длительность и в `Entry`, и в `Session` разъедутся | Дублировать Habit Entry для портала | **Ячейка портала = проекция** `WorkoutSession.durationSeconds`. Отдельного Entry у WorkoutPortal **нет** |
+| Длительность и в `Entry`, и в `Session` разъедутся | Дублировать Habit Entry для портала | **Ячейка портала = presence** completed session (`x`). `durationSeconds` на сессии для UI/истории. Отдельного Entry у WorkoutPortal **нет** |
 | Смена пунктов чеклиста ломает старые % | Считать % от «текущего» набора всегда | **Снимок дня** `ChecklistDay`: набор пунктов на этот день фиксируется; % только из снимка |
 | `·` vs `0%` | Путать | `doneCount === 0` → UI `·`; иначе процент (как IA) |
 | Cascade портала убивает справочник упражнений | Удалить Exercise/Template вместе с порталом | Cascade: **сессии** (+ их подходы). Каталог Exercise + Templates **живут** — пригодятся, если портал создадут снова |
@@ -213,7 +213,7 @@ type ChecklistDayLine = {
 | `pausedAt` | string ISO \| null | null = тикает; иначе момент постановки на паузу |
 | `pauseAccumulatedSeconds` | number | Сумма завершённых пауз (сек); default 0 |
 | `endedAt` | string ISO \| null | |
-| `durationSeconds` | number \| null | null пока in_progress; после finish = elapsed с учётом пауз; **редактируемо**; **источник ячейки портала** |
+| `durationSeconds` | number \| null | null пока in_progress; после finish = elapsed с учётом пауз; **редактируемо**; для UI сессии / Истории (**не** глиф сетки — там `x`) |
 | `templateId` | string \| null | Откуда стартовали (для «Обновить шаблон?») |
 | `exercises` | SessionExercise[] | Вложено |
 | `updatedAt` | string ISO | |
@@ -248,11 +248,12 @@ type SessionSet = {
 
 ```text
 session = byDate(date)
-if session?.status === 'completed' && session.durationSeconds != null
-  → показать duration
+if session?.status === 'completed'
+  → 'x'   (presence, как completion)
 else → ·
 ```
 
+`durationSeconds` остаётся на сессии для W1 / Истории / правки — не глиф сетки.
 ---
 
 ## 5. Связи (схема)
@@ -269,7 +270,8 @@ exercises 1──* (referenced by) workout_sessions.exercises[].exerciseId
 
 workout_templates 0..1 ──* workout_sessions (templateId)
 
-workout_portal tracker ──проекция── workout_sessions.durationSeconds
+workout_portal tracker ──presence── completed workout_sessions (glyph `x`)
+                       └──duration── session.durationSeconds (UI / история)
          (логическая связь; без FK row в entries)
 ```
 
@@ -373,7 +375,7 @@ workout_portal tracker ──проекция── workout_sessions.durationSec
 
 1. IndexedDB, `schemaVersion`, Export JSON всех stores.  
 2. Ordinary trackers → `entries`; portal/checklist **не** пишут ordinary entries.  
-3. Workout grid cell ← `workout_sessions.durationSeconds` (completed).  
+3. Workout grid cell ← completed session → `x` (duration на сессии, не в глифе).  
 4. Checklist % ← snapshot `checklist_days`; `·` если done=0.  
 5. Delete portal → delete sessions; keep exercises + templates.  
 6. Type / trackingMode immutable after create.  

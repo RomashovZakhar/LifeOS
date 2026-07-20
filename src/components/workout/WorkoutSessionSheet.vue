@@ -223,6 +223,18 @@ async function onDeleteSessionConfirm() {
   await deleteSession(s.id)
 }
 
+const deleteSessionTitle = computed(() =>
+  state.value === 'B' && orderedExercises.value.length === 0
+    ? 'Отменить тренировку?'
+    : 'Удалить тренировку?',
+)
+
+const deleteSessionBody = computed(() =>
+  state.value === 'B' && orderedExercises.value.length === 0
+    ? 'Сессия будет удалена. Можно начать заново.'
+    : 'Сессия этого дня будет удалена.',
+)
+
 async function onDeletePortalConfirm() {
   const p = portal.value
   showDeletePortal.value = false
@@ -343,6 +355,9 @@ onUnmounted(() => {
       </div>
 
       <p v-if="state === 'A1'" class="hint">Нельзя начать в будущем</p>
+      <p v-else-if="state === 'A0'" class="empty-day">
+        Нет тренировки в этот день
+      </p>
     </div>
 
     <section v-if="session" class="list-wrap">
@@ -373,7 +388,7 @@ onUnmounted(() => {
       <p v-else class="empty">Добавьте упражнение</p>
 
       <button
-        v-if="state === 'B' || state === 'C'"
+        v-if="state === 'B'"
         type="button"
         class="add"
         @click="openAdd"
@@ -407,6 +422,14 @@ onUnmounted(() => {
             ЗАКОНЧИТЬ
           </button>
           <p v-if="!canFinish" class="helper">Нужен хотя бы один подход</p>
+          <button
+            v-if="orderedExercises.length === 0"
+            type="button"
+            class="link"
+            @click="showDeleteSession = true"
+          >
+            Отменить
+          </button>
         </template>
         <button
           v-else-if="state === 'C'"
@@ -461,6 +484,17 @@ onUnmounted(() => {
         Каталог упражнений
       </button>
       <button
+        v-if="state === 'C'"
+        type="button"
+        class="menu-row"
+        @click="
+          showMenu = false;
+          openAdd();
+        "
+      >
+        Добавить упражнение
+      </button>
+      <button
         v-if="session"
         type="button"
         class="menu-row danger-text"
@@ -494,8 +528,8 @@ onUnmounted(() => {
 
   <ConfirmDeleteSheet
     v-if="showDeleteSession"
-    title="Удалить тренировку?"
-    body="Сессия этого дня будет удалена."
+    :title="deleteSessionTitle"
+    :body="deleteSessionBody"
     @close="showDeleteSession = false"
     @confirm="onDeleteSessionConfirm"
   />
@@ -639,10 +673,16 @@ onUnmounted(() => {
 .pause-cap,
 .hint,
 .helper,
-.empty {
+.empty,
+.empty-day {
   margin: 8px 0 0;
   font-size: var(--type-helper);
   color: var(--color-text-secondary);
+}
+
+.empty-day {
+  margin-top: 20px;
+  font-size: 0.9375rem;
 }
 
 .list-wrap {

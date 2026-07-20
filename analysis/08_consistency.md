@@ -28,7 +28,7 @@
 | Тема | Где сходится |
 |------|----------------|
 | Hub + portals, 1× WorkoutPortal, N× Checklist | IA, 05, 06, 07 |
-| Ячейка workout = проекция `durationSeconds` completed; нет Entry | IA, 04b, 05, 06 |
+| Ячейка workout = presence `x` если completed; нет Entry | IA, 04b, 05, 06 |
 | Checklist % = снимок `checklist_days`; `done===0` → `·` | IA, 04b, 07 |
 | Hard delete checklist item; дни не каскадятся | 04b (working tree), 07 |
 | Cascade portal → sessions only; exercises/templates живут | IA, 04b, 05, 06 |
@@ -137,7 +137,7 @@
 
 | Order | ID | Экран |
 |------|-----|--------|
-| 12 | — | Home: duration projection `M:SS`; жесты входа |
+| 12 | — | Home: workout cell `x`; жесты входа |
 | 13 | W1 | Session A0/A1/B/C; Start/Finish; timer+pause; drag exercises; ⋯ portal |
 | 14 | W2 | Sets by mode; last time; autosave |
 | 15 | W3 | Add exercise + create catalog item |
@@ -181,7 +181,7 @@ Import, sync, push, Notes, column reorder UI, exercise progress screen, system t
 One home · three capabilities · portals optional
 IDB truth · Export JSON · no sync
 · then value · no shame · no streaks
-Checklist snapshots · Workout duration projection
+Checklist snapshots · Workout presence `x`
 Build: foundation → Habits ordinary → Checklist → Workouts → harden
 W6 out · fix ИЗМЕНИТЬ · rows not cards · commit analysis first
 ```

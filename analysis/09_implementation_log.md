@@ -44,29 +44,28 @@
 
 ## Phase 3 — Workouts
 
-**Статус:** ⏳ на ревью (2026-07-20) · UI: sheets поверх home
+**Статус:** ⏳ на ревью (2026-07-20) · polish iteration
 
 ### Сделано
 
 | ID | Поведение |
 |----|-----------|
-| Home | Duration `M:SS` для completed; Symbol/cell/Today → `/?workout=date` sheet |
-| W1 | Tall sheet A0/A1/B/C; Start / Finish; timer+pause; drag; ⋯; update-template |
-| W4/W5 | Nested sheets: подходы, каталог, шаблоны, редактор |
-| Catalog | ⋯ → Каталог: rename / archive / create; W3 без archive UI |
-| H6b | Edit duration sheet с W1-C |
-| Routes | `/workout*` → redirect на `/?workout=` |
+| Home | Symbol → История; Cell/Today → сессия; completed → `x` в сетке |
+| History | Stat тренировки + время; heatmap; список дней; ИЗМЕНИТЬ/УДАЛИТЬ |
+| W1 | A0 hint; B «Отменить» если 0 упражнений; C без «+ Упражнение» (⋯) |
+| W2 | Крупные inputs кг/повт; duration wheels мин/сек |
+| Catalog | ⋯ → rename / archive / create |
+| H6b | Edit duration `M:SS` |
 
 ### Проверить на ревью
 
-1. Portal → sheet (не full page); swipe/✕/backdrop → home.  
-2. Начать → + упражнение → подходы → Закончить → `M:SS` в сетке.  
-3. Nested: W2/W3/templates поверх W1; закрытие nested не рвёт сессию.  
-4. **Delete confirm** поверх nested (упражнение / шаблон / сессия / портал) — кнопки кликабельны.  
-5. Пауза / длительность `M:SS`; из шаблона; drag; future locked.  
-6. ⋯ rename/delete portal; delete session → `·`.  
-7. ⋯ Каталог → rename / УБРАТЬ (archive) → нет в W3; прошлые сессии ок.
+1. Symbol → история (не сессия); ячейка → день.  
+2. Heatmap / список → открывает сессию дня.  
+3. Случайный Начать → Отменить (пусто) → A0.  
+4. C: нет «+ Упражнение» на экране; есть в ⋯.  
+5. Duration exercise: wheels → `40:00`; weight/reps — крупные поля.  
+6. Finish → `x` в сетке; длительность — в сессии / Истории.
 
 ### Следующее после approve
 
-Phase 4 Hardening · W6 не в V1.
+Phase 4 Hardening · W6 progress per-exercise не в V1.

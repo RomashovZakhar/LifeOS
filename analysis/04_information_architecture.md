@@ -30,7 +30,8 @@ LifeOS
     │     tap day / Today     → log / checkbox / sheet
     │
     ├── Tracker (workout portal)  → тип WorkoutPortal  [max 1 на app]
-    │     ячейка дня          → проекция durationSeconds завершённой сессии, иначе ·
+    │     ячейка дня          → `x` если completed session, иначе ·
+    │     длительность        → на сессии / в Истории (не глиф сетки)
     │     tap Symbol          → модуль Workouts (день из выбранной строки)
     │     tap day / Today     → НЕ Completion; вход в сессию дня / edit длительности сессии
     │     значение в сетке    → ТОЛЬКО длительность (нет отдельной Habit Entry; источник = Session)
@@ -162,7 +163,7 @@ Type после создания **immutable** (менять нельзя).
 
 | Правило | Решение |
 |---------|---------|
-| Длительность в сетке | **Проекция** `WorkoutSession.durationSeconds` (status=completed). Отдельной Habit Entry **нет** (04b) |
+| Длительность в сетке | **Нет.** Completed → глиф `x`. `durationSeconds` — сессия / История (04b) |
 | Ручной Completion | **Запрещён** на портале |
 | Секундомер | «Начать» → tick → «Закончить» → пишется `durationSeconds` на сессии → ячейка читает его |
 | Finish без упражнений | **Запрещён** |
@@ -327,7 +328,7 @@ Type после создания **immutable** (менять нельзя).
 |---|------|---------|
 | 1 | Навигация | Hub = Habits; Workouts/Checklist через Symbol / portal types |
 | 2 | Имена порталов | Не хардкодить; свободные Name/Symbol |
-| 3 | Workout → Habits grid | Ячейка = **проекция** длительности сессии (не Habit Entry) |
+| 3 | Workout → Habits grid | Ячейка = **presence** completed (`x`), не Habit Entry и не duration |
 | 4 | Morning | Обобщить в **Checklist** (не только утро) |
 | 5 | Кол-во порталов | 1× WorkoutPortal + N× Checklist |
 | 6 | Future days | Лог **нельзя** |
@@ -396,7 +397,7 @@ Type после создания **immutable** (менять нельзя).
 
 ```text
 Habits grid = home
-WorkoutPortal (1) → Workouts · cell = Session.durationSeconds projection · no Entry · no manual x
+WorkoutPortal (1) → Workouts · cell = completed presence `x` · duration on session · no Entry
 Checklist (N) → device on Symbol · day snapshot · · then %
 Templates + one session/day · finish asks update template?
 RU · Export JSON · dark/light · no future logs · type locked · cascade sessions only

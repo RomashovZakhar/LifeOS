@@ -4,7 +4,6 @@ import type {
   Tracker,
   WorkoutSession,
 } from '@/db'
-import { formatDurationMinSec } from '@/lib/workoutFormat'
 
 const EMPTY = '·'
 
@@ -83,12 +82,8 @@ export function cellTextForTracker(
       return `${formatMeasureValue(entry.value.value)} ${unit}`
     }
     case 'workout_portal': {
-      if (
-        session?.status === 'completed' &&
-        session.durationSeconds != null
-      ) {
-        return formatDurationMinSec(session.durationSeconds)
-      }
+      // Presence only (like completion) — duration lives on session / history
+      if (session?.status === 'completed') return 'x'
       return EMPTY
     }
     case 'checklist': {

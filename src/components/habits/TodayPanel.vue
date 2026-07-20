@@ -57,7 +57,7 @@ function entryFor(t: Tracker) {
 }
 
 function trailing(t: Tracker): string {
-  if (t.type === 'completion') return ''
+  if (t.type === 'completion' || t.type === 'workout_portal') return ''
   const text = cellTextForTracker(
     t,
     props.date,

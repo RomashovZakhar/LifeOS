@@ -12,6 +12,7 @@ import NumericEntrySheet from '@/components/habits/NumericEntrySheet.vue'
 import TimeEntrySheet from '@/components/habits/TimeEntrySheet.vue'
 import TodayPanel from '@/components/habits/TodayPanel.vue'
 import TrackerDetailSheet from '@/components/habits/TrackerDetailSheet.vue'
+import WorkoutHistorySheet from '@/components/workout/WorkoutHistorySheet.vue'
 import WorkoutSessionSheet from '@/components/workout/WorkoutSessionSheet.vue'
 import { useLiveQuery } from '@/composables/useLiveQuery'
 import {
@@ -170,10 +171,6 @@ const detailKind = computed(() => {
   return 'ordinary' as const
 })
 
-watch(detailKind, (kind) => {
-  if (kind === 'portal') openWorkout(selectedDate.value)
-})
-
 watch(detailTrackerId, async (id) => {
   if (!id) return
   const t = await db.trackers.get(id)
@@ -212,6 +209,11 @@ function closeWorkout() {
   void router.replace({ path: '/', query: q })
 }
 
+function openWorkoutFromHistory(date: string) {
+  closeDetail()
+  openWorkout(date)
+}
+
 function openToday() {
   todayOpen.value = true
 }
@@ -239,10 +241,6 @@ function onSelectDate(date: string) {
 }
 
 function onOpenSymbol(tracker: Tracker) {
-  if (tracker.type === 'workout_portal') {
-    openWorkout(selectedDate.value)
-    return
-  }
   openDetail(tracker.id)
 }
 
@@ -405,6 +403,13 @@ onUnmounted(() => {
       :tracker-id="detailTrackerId"
       @close="closeDetail"
       @deleted="closeDetail"
+    />
+    <WorkoutHistorySheet
+      v-else-if="detailKind === 'portal' && detailTrackerId"
+      :tracker-id="detailTrackerId"
+      @close="closeDetail"
+      @deleted="closeDetail"
+      @open-day="openWorkoutFromHistory"
     />
     <TrackerDetailSheet
       v-else-if="detailKind === 'ordinary' && detailTrackerId"

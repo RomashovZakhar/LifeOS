@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import ConfirmDeleteSheet from '@/components/habits/ConfirmDeleteSheet.vue'
+import SetDurationWheelSheet from '@/components/workout/SetDurationWheelSheet.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
 import CloseButton from '@/components/ui/CloseButton.vue'
 import { useLiveQuery } from '@/composables/useLiveQuery'
@@ -14,7 +15,10 @@ import {
   type TrackingMode,
   type WorkoutSession,
 } from '@/db'
-import { TRACKING_MODE_LABEL } from '@/lib/workoutFormat'
+import {
+  formatDurationMinSec,
+  TRACKING_MODE_LABEL,
+} from '@/lib/workoutFormat'
 
 const props = defineProps<{
   date: string
@@ -92,9 +96,7 @@ function formatSet(m: TrackingMode, s: SessionSet): string {
   }
   if (m === 'reps_only') return s.reps != null ? String(s.reps) : ''
   if (s.durationSeconds == null) return ''
-  const min = Math.floor(s.durationSeconds / 60)
-  const sec = s.durationSeconds % 60
-  return `${min}:${String(sec).padStart(2, '0')}`
+  return formatDurationMinSec(s.durationSeconds)
 }
 
 async function persist() {
@@ -116,7 +118,8 @@ function addSet() {
   } else if (mode.value === 'reps_only') {
     next.reps = last?.reps ?? fromLast?.reps
   } else {
-    next.durationSeconds = last?.durationSeconds ?? fromLast?.durationSeconds
+    next.durationSeconds =
+      last?.durationSeconds ?? fromLast?.durationSeconds ?? 60
   }
   sets.value = [...sets.value, next]
   void persist()
@@ -124,33 +127,6 @@ function addSet() {
 
 function removeSet(id: string) {
   sets.value = sets.value.filter((s) => s.id !== id)
-  void persist()
-}
-
-function bumpWeight(id: string, delta: number) {
-  sets.value = sets.value.map((s) => {
-    if (s.id !== id) return s
-    const cur = s.weightKg ?? 0
-    return { ...s, weightKg: Math.max(0, Math.round((cur + delta) * 10) / 10) }
-  })
-  void persist()
-}
-
-function bumpReps(id: string, delta: number) {
-  sets.value = sets.value.map((s) => {
-    if (s.id !== id) return s
-    const cur = s.reps ?? 0
-    return { ...s, reps: Math.max(0, cur + delta) }
-  })
-  void persist()
-}
-
-function bumpDuration(id: string, delta: number) {
-  sets.value = sets.value.map((s) => {
-    if (s.id !== id) return s
-    const cur = s.durationSeconds ?? 0
-    return { ...s, durationSeconds: Math.max(0, cur + delta) }
-  })
   void persist()
 }
 
@@ -177,18 +153,25 @@ function onRepsInput(id: string, raw: string) {
   void persist()
 }
 
-function onDurationInput(id: string, raw: string) {
-  const n = Number(raw)
+const durationEditId = ref<string | null>(null)
+
+const durationEditSeconds = computed(() => {
+  const id = durationEditId.value
+  if (!id) return 0
+  return sets.value.find((s) => s.id === id)?.durationSeconds ?? 0
+})
+
+function openDurationEdit(id: string) {
+  durationEditId.value = id
+}
+
+function onDurationSave(seconds: number) {
+  const id = durationEditId.value
+  if (!id) return
   sets.value = sets.value.map((s) =>
-    s.id === id
-      ? {
-          ...s,
-          durationSeconds: Number.isFinite(n)
-            ? Math.max(0, Math.round(n))
-            : undefined,
-        }
-      : s,
+    s.id === id ? { ...s, durationSeconds: Math.max(0, seconds) } : s,
   )
+  durationEditId.value = null
   void persist()
 }
 
@@ -202,12 +185,9 @@ async function onDeleteExercise() {
   emit('close')
 }
 
-watch(
-  sessionExercise,
-  (se) => {
-    if (session.value && !se) emit('close')
-  },
-)
+watch(sessionExercise, (se) => {
+  if (session.value && !se) emit('close')
+})
 </script>
 
 <template>
@@ -239,59 +219,55 @@ watch(
 
           <template v-if="mode === 'weight_reps'">
             <div class="field">
-              <button type="button" class="step" @click="bumpWeight(set.id, -2.5)">−</button>
               <input
                 class="num mono"
                 type="number"
                 inputmode="decimal"
                 :value="set.weightKg ?? ''"
-                placeholder="кг"
+                placeholder="0"
                 @change="onWeightInput(set.id, ($event.target as HTMLInputElement).value)"
               />
-              <button type="button" class="step" @click="bumpWeight(set.id, 2.5)">+</button>
+              <span class="unit">кг</span>
             </div>
             <div class="field">
-              <button type="button" class="step" @click="bumpReps(set.id, -1)">−</button>
               <input
                 class="num mono"
                 type="number"
                 inputmode="numeric"
                 :value="set.reps ?? ''"
-                placeholder="повт"
+                placeholder="0"
                 @change="onRepsInput(set.id, ($event.target as HTMLInputElement).value)"
               />
-              <button type="button" class="step" @click="bumpReps(set.id, 1)">+</button>
+              <span class="unit">повт</span>
             </div>
           </template>
 
           <template v-else-if="mode === 'reps_only'">
             <div class="field wide">
-              <button type="button" class="step" @click="bumpReps(set.id, -1)">−</button>
               <input
                 class="num mono"
                 type="number"
                 inputmode="numeric"
                 :value="set.reps ?? ''"
-                placeholder="повт"
+                placeholder="0"
                 @change="onRepsInput(set.id, ($event.target as HTMLInputElement).value)"
               />
-              <button type="button" class="step" @click="bumpReps(set.id, 1)">+</button>
+              <span class="unit">повт</span>
             </div>
           </template>
 
           <template v-else>
-            <div class="field wide">
-              <button type="button" class="step" @click="bumpDuration(set.id, -15)">−</button>
-              <input
-                class="num mono"
-                type="number"
-                inputmode="numeric"
-                :value="set.durationSeconds ?? ''"
-                placeholder="сек"
-                @change="onDurationInput(set.id, ($event.target as HTMLInputElement).value)"
-              />
-              <button type="button" class="step" @click="bumpDuration(set.id, 15)">+</button>
-            </div>
+            <button
+              type="button"
+              class="duration mono"
+              @click="openDurationEdit(set.id)"
+            >
+              {{
+                set.durationSeconds != null
+                  ? formatDurationMinSec(set.durationSeconds)
+                  : '0:00'
+              }}
+            </button>
           </template>
 
           <button
@@ -311,6 +287,13 @@ watch(
       УДАЛИТЬ УПРАЖНЕНИЕ
     </button>
   </BottomSheet>
+
+  <SetDurationWheelSheet
+    v-if="durationEditId"
+    :duration-seconds="durationEditSeconds"
+    @close="durationEditId = null"
+    @save="onDurationSave"
+  />
 
   <ConfirmDeleteSheet
     v-if="showDelete"
@@ -386,7 +369,7 @@ watch(
 .set-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   min-height: 56px;
   padding: 8px 10px 8px 14px;
   border-radius: 14px;
@@ -403,33 +386,48 @@ watch(
   flex: 1 1 0;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   min-width: 0;
+  height: 48px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: var(--color-surface-2);
 }
 
 .field.wide {
   flex: 1 1 auto;
 }
 
-.step {
-  flex: 0 0 36px;
-  height: 40px;
-  border-radius: 10px;
-  background: var(--color-surface-2);
-  color: var(--color-text-primary);
-  font-size: 1.125rem;
-}
-
 .num {
   flex: 1 1 auto;
   min-width: 0;
-  height: 40px;
+  height: 100%;
   border: none;
-  border-radius: 10px;
-  background: var(--color-surface-2);
+  background: transparent;
   color: var(--color-text-primary);
   text-align: center;
-  font-size: 1.0625rem;
+  font-size: 1.125rem;
+}
+
+.unit {
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.duration {
+  flex: 1 1 auto;
+  height: 48px;
+  padding: 0 16px;
+  border-radius: 12px;
+  background: var(--color-surface-2);
+  color: var(--color-text-primary);
+  font-size: 1.25rem;
+  font-weight: 500;
+  text-align: center;
 }
 
 .del {
