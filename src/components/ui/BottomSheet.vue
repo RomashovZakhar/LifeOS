@@ -23,16 +23,20 @@ const emit = defineEmits<{
 const open = ref(false)
 const leaving = ref(false)
 const dismissLocked = ref(false)
+const bodyEl = ref<HTMLElement | null>(null)
 let leaveTimer: number | undefined
 
 const { dragY, dragging, onTouchStart, onTouchMove, onTouchEnd, reset } =
-  useSwipeDismiss(() => requestClose())
+  useSwipeDismiss(
+    () => requestClose(),
+    72,
+    { canBegin: canBeginDismiss },
+  )
 
 const dismissLockApi: SheetDismissLock = {
   lock: () => {
     dismissLocked.value = true
-    dragging.value = false
-    dragY.value = 0
+    reset()
   },
   unlock: () => {
     dismissLocked.value = false
@@ -72,21 +76,40 @@ function requestClose() {
 
 provide('sheetClose', requestClose)
 
-function onChromeTouchStart(e: TouchEvent) {
-  if (dismissLocked.value) return
+function canBeginDismiss(e: TouchEvent): boolean {
+  if (dismissLocked.value) return false
+  const target = e.target
+  if (!(target instanceof Element)) return true
+
+  // Nested drag / form fields
+  if (
+    target.closest(
+      '.handle, .sortable-chosen, .sortable-drag, input, textarea, select',
+    )
+  ) {
+    return false
+  }
+
+  // Header / grab — always
+  if (target.closest('.chrome')) return true
+
+  // Scrollable body: only when already at top (pull-to-dismiss)
+  const body = bodyEl.value
+  if (body && body.scrollHeight > body.clientHeight + 1) {
+    return body.scrollTop <= 0
+  }
+  return true
+}
+
+function onPanelTouchStart(e: TouchEvent) {
   onTouchStart(e)
 }
 
-function onChromeTouchMove(e: TouchEvent) {
-  if (dismissLocked.value) return
+function onPanelTouchMove(e: TouchEvent) {
   onTouchMove(e)
 }
 
-function onChromeTouchEnd() {
-  if (dismissLocked.value) {
-    reset()
-    return
-  }
+function onPanelTouchEnd() {
   onTouchEnd()
 }
 
@@ -129,15 +152,12 @@ defineExpose({ requestClose })
       aria-modal="true"
       :aria-label="ariaLabel || title || 'Sheet'"
       :style="panelStyle"
+      @touchstart.passive="onPanelTouchStart"
+      @touchmove="onPanelTouchMove"
+      @touchend="onPanelTouchEnd"
+      @touchcancel="onPanelTouchEnd"
     >
-      <!-- Swipe-dismiss только с chrome: body/list не закрывают sheet -->
-      <div
-        class="chrome"
-        @touchstart.passive="onChromeTouchStart"
-        @touchmove="onChromeTouchMove"
-        @touchend="onChromeTouchEnd"
-        @touchcancel="onChromeTouchEnd"
-      >
+      <div class="chrome">
         <div class="grab" aria-hidden="true" />
         <header v-if="title" class="header">
           <h2 class="title">{{ title }}</h2>
@@ -161,7 +181,7 @@ defineExpose({ requestClose })
           <slot name="header" />
         </div>
       </div>
-      <div class="body">
+      <div ref="bodyEl" class="body">
         <slot />
       </div>
       <div v-if="$slots.footer" class="footer">
@@ -239,7 +259,6 @@ defineExpose({ requestClose })
 
 .chrome {
   flex: 0 0 auto;
-  touch-action: none;
 }
 
 .grab {
@@ -264,8 +283,8 @@ defineExpose({ requestClose })
 .title {
   margin: 0;
   font-size: 1.125rem;
-  font-weight: 400;
   color: var(--color-text-primary);
+  font-weight: 400;
 }
 
 .close {
