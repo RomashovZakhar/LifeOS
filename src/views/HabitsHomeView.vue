@@ -510,6 +510,8 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   height: 100%;
+  max-height: 100%;
+  overflow: hidden;
   padding: 8px var(--layout-gutter) 0;
   max-width: var(--layout-max);
   margin: 0 auto;

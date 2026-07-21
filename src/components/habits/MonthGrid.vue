@@ -205,8 +205,10 @@ defineExpose({ scrollSelectedIntoView: ensureSelectedVisible });
 .grid-scroll {
   height: 100%;
   overflow: auto;
+  overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
+  touch-action: pan-x pan-y;
 }
 
 .track {
