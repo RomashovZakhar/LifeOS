@@ -91,15 +91,21 @@ primary CTA внизу — зависит от состояния
 
 | State | Условие | Header meta | Primary CTA | Secondary |
 |-------|---------|-------------|-------------|-----------|
-| **A0** Empty today/past | Нет session, date ≤ today | — | **НАЧАТЬ ТРЕНИРОВКУ** | Текст-ссылка «Из шаблона» если есть ≥1 template |
+| **A0** Empty today/past | Нет session, date ≤ today | — | Если есть ≥1 программа: **ВЫБРАТЬ ПРОГРАММУ**; иначе **НАЧАТЬ ТРЕНИРОВКУ** | При наличии программ — ссылка «Пустая тренировка» |
 | **A1** Future | date > today | — | CTA disabled / скрыт | «Нельзя начать в будущем» caption спокойный |
-| **B** In progress | status=in_progress | Timer `H:MM:SS` (tap → задать длительность + завершить) + **Пауза / Продолжить** | **ЗАКОНЧИТЬ** (disabled если нет ≥1 set) | «+ Упражнение»; нельзя второй Начать |
-| **C** Completed | status=completed | Показана длительность (tap → edit duration sheet) | нет «Начать» | правка подходов; **+ Упражнение** только в ⋯; **Удалить тренировку** |
+| **B** In progress | status=in_progress | Timer `H:MM:SS` (tap → задать длительность + завершить) + **Пауза / Продолжить** | **ЗАКОНЧИТЬ** (disabled если нет ≥1 set) | «+ Упражнение»; «Отменить» только если 0 упражнений |
+| **C** Completed | status=completed | Показана длительность (tap → edit duration sheet) | **УДАЛИТЬ ТРЕНИРОВКУ** | правка существующих подходов; **без** + упражнение |
 
-**«НАЧАТЬ ТРЕНИРОВКУ» (пустая):**  
+**Колонка (Symbol → History/detail):** Программы (manage) · Каталог · ИЗМЕНИТЬ · УДАЛИТЬ колонку. Старт сессии из detail **нет**.
+
+**День:** без меню ⋯. Настройки колонки / программы / каталог — только в detail.
+
+> **UI copy (2026-07-21):** в интерфейсе «шаблон» → **«программа»** (`workout_templates` в данных без rename).
+
+**«НАЧАТЬ ТРЕНИРОВКУ» / «Пустая тренировка»:**  
 создать session: `status=in_progress`, `startedAt=now`, `pausedAt=null`, `pauseAccumulatedSeconds=0`, `templateId=null`, `exercises=[]`.
 
-**«Из шаблона»:** → picker W4-select → session с exercises из template: на каждое упражнение **1 пустой set** + placeholder UI из прошлого раза (если есть) + `templateId`.
+**«ВЫБРАТЬ ПРОГРАММУ»:** → picker W4-select → session с exercises из template…
 
 **Повторный Начать при existing in_progress:** не создавать новую — показать эту (B).  
 **Начать при existing completed:** не создавать; остаёмся в C. Отдельного «начать заново» нет без delete.
@@ -110,11 +116,11 @@ primary CTA внизу — зависит от состояния
 2. Если сейчас на паузе — сначала «закрыть» паузу в accumulated (как Resume math), затем:  
    `endedAt=now`, `durationSeconds = elapsedSeconds()` (формула ниже), `pausedAt=null`.  
 3. `status=completed`.  
-4. Если `templateId != null` **и** состав сессии ≠ `template.exerciseIds` (add / remove / другой порядок) → modal: **«Обновить шаблон?»**  
+4. Если `templateId != null` **и** состав сессии ≠ `template.exerciseIds` (add / remove / другой порядок) → modal: **«Обновить программу?»**  
    - Совпадает 1:1 → **не** спрашивать.  
    - **ДА** → `template.exerciseIds = session.exercises.map(e => e.exerciseId)` в порядке sortOrder.  
    - **НЕТ** → ничего.  
-   - Шаблон удалили mid-workout → skip modal.  
+   - Программу удалили mid-workout → skip modal.  
 5. Habits cell → `x` (completed); было `…` пока in_progress.
 
 **Таймер (B) — с паузой (утверждено):**

@@ -6,6 +6,8 @@ import NewTrackerSheet from "@/components/habits/NewTrackerSheet.vue";
 import BottomSheet from "@/components/ui/BottomSheet.vue";
 import ChipSelect from "@/components/ui/ChipSelect.vue";
 import CloseButton from "@/components/ui/CloseButton.vue";
+import WorkoutExerciseCatalogSheet from "@/components/workout/WorkoutExerciseCatalogSheet.vue";
+import WorkoutTemplatesSheet from "@/components/workout/WorkoutTemplatesSheet.vue";
 import { useLiveQuery } from "@/composables/useLiveQuery";
 import {
   db,
@@ -36,6 +38,8 @@ const emit = defineEmits<{
 const range = ref<DetailRange>("month");
 const showEdit = ref(false);
 const showDelete = ref(false);
+const showPrograms = ref(false);
+const showCatalog = ref(false);
 
 const RANGE_OPTIONS: { value: DetailRange; label: string }[] = [
   { value: "week", label: "Неделя" },
@@ -186,6 +190,17 @@ async function onDeleteConfirm() {
       <p class="stat-value sm mono">{{ formatDurationMinSec(totalSeconds) }}</p>
     </section>
 
+    <section class="nav" aria-label="Программы и каталог">
+      <button type="button" class="nav-row" @click="showPrograms = true">
+        <span>Программы</span>
+        <span class="chev" aria-hidden="true">›</span>
+      </button>
+      <button type="button" class="nav-row" @click="showCatalog = true">
+        <span>Каталог упражнений</span>
+        <span class="chev" aria-hidden="true">›</span>
+      </button>
+    </section>
+
     <section class="history">
       <h2 class="section-title">История</h2>
       <HistoryHeatmap
@@ -237,9 +252,21 @@ async function onDeleteConfirm() {
   <ConfirmDeleteSheet
     v-if="showDelete"
     title="Удалить колонку тренировки?"
-    body="Удалятся все тренировки. Каталог упражнений и шаблоны останутся."
+    body="Удалятся все тренировки. Каталог упражнений и программы останутся."
     @close="showDelete = false"
     @confirm="onDeleteConfirm"
+  />
+
+  <WorkoutTemplatesSheet
+    v-if="showPrograms"
+    :date="today"
+    mode="manage"
+    @close="showPrograms = false"
+  />
+
+  <WorkoutExerciseCatalogSheet
+    v-if="showCatalog"
+    @close="showCatalog = false"
   />
 </template>
 
@@ -331,6 +358,40 @@ async function onDeleteConfirm() {
 
 .stat-value.sm {
   font-size: 2rem;
+}
+
+.nav {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--color-surface-1);
+}
+
+.nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 14px 16px;
+  text-align: left;
+  background: var(--color-surface-3);
+  color: var(--color-text-primary);
+  font-size: 0.9375rem;
+}
+
+.nav-row:active {
+  opacity: 0.92;
+}
+
+.chev {
+  font-size: 1.25rem;
+  color: var(--color-text-secondary);
+  line-height: 1;
 }
 
 .history {

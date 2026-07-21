@@ -9,10 +9,8 @@ import {
   watch,
 } from 'vue'
 import ConfirmDeleteSheet from '@/components/habits/ConfirmDeleteSheet.vue'
-import NewTrackerSheet from '@/components/habits/NewTrackerSheet.vue'
 import DurationEditSheet from '@/components/workout/DurationEditSheet.vue'
 import WorkoutAddExerciseSheet from '@/components/workout/WorkoutAddExerciseSheet.vue'
-import WorkoutExerciseCatalogSheet from '@/components/workout/WorkoutExerciseCatalogSheet.vue'
 import WorkoutExerciseSheet from '@/components/workout/WorkoutExerciseSheet.vue'
 import WorkoutTemplatesSheet from '@/components/workout/WorkoutTemplatesSheet.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
@@ -22,7 +20,6 @@ import { SHEET_DISMISS_LOCK_KEY } from '@/composables/sheetDismissLock'
 import {
   db,
   deleteSession,
-  deleteTrackerCascade,
   elapsedSeconds,
   finishSession,
   finishSessionWithDuration,
@@ -142,16 +139,12 @@ const orderedExercises = computed(() => {
   return [...s.exercises].sort((a, b) => a.sortOrder - b.sortOrder)
 })
 
-const showMenu = ref(false)
-const showEditPortal = ref(false)
-const showDeletePortal = ref(false)
 const showDeleteSession = ref(false)
 const showDuration = ref(false)
 const showUpdateTemplate = ref(false)
 const showAdd = ref(false)
 const exerciseId = ref<string | null>(null)
-const templatesMode = ref<'select' | 'manage' | null>(null)
-const showCatalog = ref(false)
+const showSelectProgram = ref(false)
 
 const toast = ref('')
 let toastTimer: number | undefined
@@ -169,8 +162,8 @@ async function onStart() {
   await startEmptySession(props.date)
 }
 
-function onFromTemplate() {
-  templatesMode.value = 'select'
+function onFromProgram() {
+  showSelectProgram.value = true
 }
 
 async function onPauseResume() {
@@ -249,7 +242,6 @@ async function onSaveDuration(seconds: number) {
 async function onDeleteSessionConfirm() {
   const s = session.value
   showDeleteSession.value = false
-  showMenu.value = false
   if (!s) return
   await deleteSession(s.id)
 }
@@ -265,14 +257,6 @@ const deleteSessionBody = computed(() =>
     ? 'Сессия будет удалена. Можно начать заново.'
     : 'Сессия этого дня будет удалена.',
 )
-
-async function onDeletePortalConfirm() {
-  const p = portal.value
-  showDeletePortal.value = false
-  if (!p) return
-  await deleteTrackerCascade(p.id)
-  emit('close')
-}
 
 const listEl = ref<HTMLElement | null>(null)
 let sortable: Sortable | null = null
@@ -352,14 +336,6 @@ onUnmounted(() => {
     <template #header>
       <header class="head">
         <CloseButton />
-        <button
-          type="button"
-          class="more"
-          aria-label="Ещё"
-          @click="showMenu = true"
-        >
-          ⋯
-        </button>
       </header>
     </template>
 
@@ -431,16 +407,16 @@ onUnmounted(() => {
     <template #footer>
       <div class="footer">
         <template v-if="state === 'A0'">
-          <button type="button" class="cta" @click="onStart">
+          <template v-if="templates.length > 0">
+            <button type="button" class="cta" @click="onFromProgram">
+              ВЫБРАТЬ ПРОГРАММУ
+            </button>
+            <button type="button" class="link" @click="onStart">
+              Пустая тренировка
+            </button>
+          </template>
+          <button v-else type="button" class="cta" @click="onStart">
             НАЧАТЬ ТРЕНИРОВКУ
-          </button>
-          <button
-            v-if="templates.length > 0"
-            type="button"
-            class="link"
-            @click="onFromTemplate"
-          >
-            Из шаблона
           </button>
         </template>
         <template v-else-if="state === 'B'">
@@ -476,101 +452,12 @@ onUnmounted(() => {
 
   <p v-if="toast" class="toast">{{ toast }}</p>
 
-  <BottomSheet
-    v-if="showMenu"
-    size="auto"
-    title="Ещё"
-    :layer="50"
-    @close="showMenu = false"
-  >
-    <div class="menu">
-      <button
-        type="button"
-        class="menu-row"
-        @click="
-          showEditPortal = true;
-          showMenu = false;
-        "
-      >
-        Изменить название / символ
-      </button>
-      <button
-        type="button"
-        class="menu-row"
-        @click="
-          showMenu = false;
-          templatesMode = 'manage';
-        "
-      >
-        Шаблоны
-      </button>
-      <button
-        type="button"
-        class="menu-row"
-        @click="
-          showMenu = false;
-          showCatalog = true;
-        "
-      >
-        Каталог упражнений
-      </button>
-      <button
-        v-if="state === 'C'"
-        type="button"
-        class="menu-row"
-        @click="
-          showMenu = false;
-          openAdd();
-        "
-      >
-        Добавить упражнение
-      </button>
-      <button
-        v-if="session"
-        type="button"
-        class="menu-row danger-text"
-        @click="
-          showDeleteSession = true;
-          showMenu = false;
-        "
-      >
-        Удалить тренировку
-      </button>
-      <button
-        type="button"
-        class="menu-row danger-text"
-        @click="
-          showDeletePortal = true;
-          showMenu = false;
-        "
-      >
-        Удалить колонку тренировки
-      </button>
-    </div>
-  </BottomSheet>
-
-  <NewTrackerSheet
-    v-if="showEditPortal && portal"
-    :tracker="portal"
-    :layer="80"
-    @close="showEditPortal = false"
-    @saved="showEditPortal = false"
-  />
-
   <ConfirmDeleteSheet
     v-if="showDeleteSession"
     :title="deleteSessionTitle"
     :body="deleteSessionBody"
     @close="showDeleteSession = false"
     @confirm="onDeleteSessionConfirm"
-  />
-
-  <ConfirmDeleteSheet
-    v-if="showDeletePortal"
-    title="Удалить колонку тренировки?"
-    body="Удалятся все тренировки. Каталог упражнений и шаблоны останутся."
-    @close="showDeletePortal = false"
-    @confirm="onDeletePortalConfirm"
   />
 
   <DurationEditSheet
@@ -583,12 +470,12 @@ onUnmounted(() => {
   <BottomSheet
     v-if="showUpdateTemplate"
     size="auto"
-    title="Обновить шаблон?"
+    title="Обновить программу?"
     :layer="50"
     @close="onUpdateTemplate(false)"
   >
     <p class="body-text">
-      Заменить состав шаблона упражнениями этой тренировки?
+      Заменить состав программы упражнениями этой тренировки?
     </p>
     <template #footer>
       <div class="actions">
@@ -616,35 +503,18 @@ onUnmounted(() => {
   />
 
   <WorkoutTemplatesSheet
-    v-if="templatesMode"
+    v-if="showSelectProgram"
     :date="date"
-    :mode="templatesMode"
-    @close="templatesMode = null"
-  />
-
-  <WorkoutExerciseCatalogSheet
-    v-if="showCatalog"
-    @close="showCatalog = false"
+    mode="select"
+    @close="showSelectProgram = false"
   />
 </template>
 
 <style scoped>
 .head {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-}
-
-.more {
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  border-radius: 999px;
-  background: var(--color-surface-3);
-  color: var(--color-text-primary);
-  font-size: 1.25rem;
-  line-height: 1;
 }
 
 .hero {
@@ -853,47 +723,29 @@ onUnmounted(() => {
   flex: 1;
 }
 
-.menu {
-  display: flex;
-  flex-direction: column;
-}
-
-.menu-row {
-  width: 100%;
-  min-height: 52px;
-  padding: 14px 4px;
-  text-align: left;
-  font-size: 1.0625rem;
-  color: var(--color-text-primary);
-  border-bottom: 1px solid
-    color-mix(in srgb, var(--color-text-secondary) 18%, transparent);
-}
-
-.menu-row:last-child {
-  border-bottom: 0;
-}
-
-.danger-text {
-  color: var(--color-danger-fg);
-}
-
-.body-text {
-  margin: 0;
-  color: var(--color-text-secondary);
-  line-height: 1.4;
-  font-size: var(--type-body);
-}
-
 .toast {
   position: fixed;
   left: 50%;
   bottom: calc(24px + var(--safe-bottom));
   transform: translateX(-50%);
+  margin: 0;
   padding: 8px 14px;
   border-radius: 10px;
   background: var(--color-surface-3);
   color: var(--color-text-secondary);
   font-size: var(--type-helper);
   z-index: 80;
+  white-space: nowrap;
+}
+
+.row-ghost {
+  opacity: 0.4;
+}
+
+.body-text {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
 }
 </style>

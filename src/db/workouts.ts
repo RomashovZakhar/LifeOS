@@ -409,7 +409,7 @@ export async function getTemplate(
 export async function createTemplate(name: string): Promise<WorkoutTemplate> {
   const t: WorkoutTemplate = {
     id: crypto.randomUUID(),
-    name: name.trim() || "Шаблон",
+    name: name.trim() || "Программа",
     exerciseIds: [],
     updatedAt: new Date().toISOString(),
   };

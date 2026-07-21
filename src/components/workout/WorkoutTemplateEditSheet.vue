@@ -180,13 +180,13 @@ onUnmounted(() => {
   <BottomSheet
     v-if="template"
     size="tall"
-    aria-label="Шаблон"
+    aria-label="Программа"
     :layer="60"
     @close="emit('close')"
   >
     <template #header>
       <header class="head">
-        <h1 class="title">Шаблон</h1>
+        <h1 class="title">Программа</h1>
         <CloseButton />
       </header>
     </template>
@@ -225,7 +225,7 @@ onUnmounted(() => {
     </button>
 
     <button type="button" class="danger" @click="showDelete = true">
-      УДАЛИТЬ ШАБЛОН
+      УДАЛИТЬ ПРОГРАММУ
     </button>
   </BottomSheet>
 
@@ -287,7 +287,7 @@ onUnmounted(() => {
 
   <ConfirmDeleteSheet
     v-if="showDelete"
-    title="Удалить шаблон?"
+    title="Удалить программу?"
     body="Тренировки не изменятся."
     @close="showDelete = false"
     @confirm="onDelete"

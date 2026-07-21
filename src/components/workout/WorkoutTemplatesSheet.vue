@@ -44,7 +44,7 @@ function openCreate() {
 }
 
 async function submitCreate() {
-  const t = await createTemplate(newName.value.trim() || 'Шаблон')
+  const t = await createTemplate(newName.value.trim() || 'Программа')
   showCreate.value = false
   editId.value = t.id
 }
@@ -60,18 +60,18 @@ async function onDeleteConfirm() {
 <template>
   <BottomSheet
     size="tall"
-    aria-label="Шаблоны"
+    aria-label="Программы"
     :layer="50"
     @close="emit('close')"
   >
     <template #header>
       <header class="head">
-        <h1 class="title">Шаблоны</h1>
+        <h1 class="title">{{ mode === 'select' ? 'Выбрать программу' : 'Программы' }}</h1>
         <CloseButton />
       </header>
     </template>
 
-    <p v-if="templates.length === 0" class="empty">Нет шаблонов</p>
+    <p v-if="templates.length === 0" class="empty">Нет программ</p>
 
     <ul v-else class="list">
       <li v-for="t in templates" :key="t.id" class="item">
@@ -98,14 +98,14 @@ async function onDeleteConfirm() {
       class="create"
       @click="openCreate"
     >
-      + Новый шаблон
+      + Новая программа
     </button>
   </BottomSheet>
 
   <BottomSheet
     v-if="showCreate"
     size="auto"
-    title="Новый шаблон"
+    title="Новая программа"
     :layer="60"
     @close="showCreate = false"
   >
@@ -122,7 +122,7 @@ async function onDeleteConfirm() {
 
   <ConfirmDeleteSheet
     v-if="deleteTarget"
-    title="Удалить шаблон?"
+    title="Удалить программу?"
     body="Тренировки не изменятся."
     @close="deleteTarget = null"
     @confirm="onDeleteConfirm"

@@ -46,7 +46,7 @@
 
 **Статус:** ✅ утверждён (2026-07-20)
 
-Sheets поверх home · History · Session · `…`/`x` · templates · update template? при отличии · B tap timer → finish with duration.
+Sheets поверх home · History · Session · `…`/`x` · programs/catalog in Symbol detail · A0: ВЫБРАТЬ ПРОГРАММУ / Пустая · day без ⋯ · C без +упражнение · UI «программа» (= template).
 
 ---
 
@@ -69,5 +69,6 @@ GitHub Pages (`/LifeOS/`): workflow `.github/workflows/deploy-pages.yml`. URL п
 - Dock: safe-bottom padding on `.bottom` (not empty shell gap).
 - Settings → Трекеры: Sortable reorder колонок.
 - Сетка: selected day скроллится к середине видимой зоны.
+- Workout IA (2026-07-21): Symbol/detail = Программы + Каталог + rename/delete колонки; день без ⋯; A0 primary «ВЫБРАТЬ ПРОГРАММУ»; C без add exercise; UI «шаблон»→«программа».
 
 V1 queue закрыта (08). Вне V1: import, sync, push, Notes, W6, system theme follow.
