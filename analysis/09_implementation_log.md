@@ -64,9 +64,9 @@ GitHub Pages (`/LifeOS/`): workflow `.github/workflows/deploy-pages.yml`. URL п
 
 - Settings → sheets (root / Трекеры / Оформление); `/settings*` → query redirect.
 - Outer viewport scroll locked; only MonthGrid `.grid-scroll` scrolls (dock fixed).
-- iOS PWA: `--app-height` via visualViewport; bottom safe-area on dock (not empty shell gap).
+- iOS PWA height: standalone uses `100vh`/`100lvh` + `position:fixed; inset:0` (not dvh/visualViewport — WebKit #254868); safe-area on dock.
 - Sheet dismiss не перехватывает `.wheel` (time / duration).
-- Dock: без двойного `--safe-bottom` (только `.app-shell`).
+- Dock: safe-bottom padding on `.bottom` (not empty shell gap).
 - Settings → Трекеры: Sortable reorder колонок.
 - Сетка: selected day скроллится к середине видимой зоны.
 

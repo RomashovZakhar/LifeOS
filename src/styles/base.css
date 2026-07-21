@@ -6,26 +6,65 @@
   box-sizing: border-box;
 }
 
+/*
+  Safari tab: 100dvh is fine.
+  iOS standalone PWA + viewport-fit=cover: 100dvh / visualViewport / -webkit-fill-available
+  often exclude bottom safe-area on cold start (WebKit #254868) → gap under dock.
+  Use 100vh / 100lvh in standalone so the shell fills the physical screen; safe-area
+  stays on the dock only.
+*/
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   height: 100%;
-  height: -webkit-fill-available;
+  height: 100dvh;
 }
 
 html,
 body,
 #app {
-  height: var(--app-height, 100dvh);
-  max-height: var(--app-height, 100dvh);
+  height: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
 }
 
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  html {
+    height: 100%;
+    height: 100vh;
+    height: 100lvh;
+  }
+
+  html,
+  body,
+  #app {
+    height: 100%;
+    height: 100vh;
+    height: 100lvh;
+    max-height: none;
+  }
+}
+
+/* Legacy iOS Add to Home Screen (navigator.standalone) */
+html.standalone {
+  height: 100%;
+  height: 100vh;
+  height: 100lvh;
+}
+
+html.standalone,
+html.standalone body,
+html.standalone #app {
+  height: 100%;
+  height: 100vh;
+  height: 100lvh;
+  max-height: none;
+}
+
 body {
   margin: 0;
-  min-height: 100%;
-  min-height: -webkit-fill-available;
   font-family: var(--font-sans);
   font-size: var(--type-body);
   line-height: 1.35;
@@ -62,13 +101,13 @@ a {
 }
 
 .app-shell {
+  position: fixed;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  max-height: 100%;
   overflow: hidden;
   box-sizing: border-box;
-  /* Bottom safe-area lives on dock / sheets — not empty gap under chrome */
+  /* Bottom safe-area on dock / sheets — not empty gap under chrome */
   padding-top: var(--safe-top);
   padding-right: var(--safe-right);
   padding-bottom: 0;
