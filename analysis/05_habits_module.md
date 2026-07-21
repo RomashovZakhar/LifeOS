@@ -274,23 +274,26 @@ Workout portal / checklist Symbol **не** открывают H7.
 
 ### H8 — Settings
 
+Sheet поверх home (`/?settings=1`). Вложенные: Трекеры / Оформление.
+
 ```text
 Настройки                                 ✕
 Трекеры             ›
 Оформление          ›
 Экспорт данных
-— спокойный footer без бренда эталона —
 ```
 
 Без Upgrade / iCloud / Rate / Support marketing / Replay intro эталона.
 
-**Трекеры:** список всех trackers; drag ≡ → `reorderTrackers` (`sortOrder`); порядок = колонки сетки слева направо.
+**Трекеры:** sheet; drag ≡ → `reorderTrackers` (`sortOrder`); порядок = колонки сетки слева направо.
 
 **Экспорт:** tap → сформировать JSON (04b) → Share sheet iOS / download. Успех — короткий toast «Файл готов». Ошибка — спокойный текст.
 
 ---
 
 ### H9 — Appearance
+
+Sheet (`/?settings=appearance`):
 
 ```text
 Оформление

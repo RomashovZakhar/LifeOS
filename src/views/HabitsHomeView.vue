@@ -12,6 +12,7 @@ import NumericEntrySheet from "@/components/habits/NumericEntrySheet.vue";
 import TimeEntrySheet from "@/components/habits/TimeEntrySheet.vue";
 import TodayPanel from "@/components/habits/TodayPanel.vue";
 import TrackerDetailSheet from "@/components/habits/TrackerDetailSheet.vue";
+import SettingsSheet from "@/components/settings/SettingsSheet.vue";
 import WorkoutHistorySheet from "@/components/workout/WorkoutHistorySheet.vue";
 import WorkoutSessionSheet from "@/components/workout/WorkoutSessionSheet.vue";
 import { useLiveQuery } from "@/composables/useLiveQuery";
@@ -216,6 +217,33 @@ function openWorkoutFromHistory(date: string) {
   openWorkout(date);
 }
 
+type SettingsPanel = "root" | "appearance" | "trackers";
+
+const settingsPanel = computed((): SettingsPanel | null => {
+  const v = route.query.settings;
+  if (v === "appearance" || v === "trackers") return v;
+  if (v != null && v !== "") return "root";
+  return null;
+});
+
+function openSettings() {
+  const q = { ...route.query };
+  q.settings = "1";
+  void router.push({ path: "/", query: q });
+}
+
+function closeSettings() {
+  const q = { ...route.query };
+  delete q.settings;
+  void router.replace({ path: "/", query: q });
+}
+
+function navigateSettings(panel: SettingsPanel) {
+  const q = { ...route.query };
+  q.settings = panel === "root" ? "1" : panel;
+  void router.replace({ path: "/", query: q });
+}
+
 function openToday() {
   todayOpen.value = true;
 }
@@ -396,7 +424,7 @@ onUnmounted(() => {
         @next-month="goMonth(1)"
         @today="goToday"
         @add="openNewTracker"
-        @more="router.push('/settings')"
+        @more="openSettings"
       />
     </footer>
 
@@ -438,6 +466,13 @@ onUnmounted(() => {
       v-if="workoutDate"
       :date="workoutDate"
       @close="closeWorkout"
+    />
+
+    <SettingsSheet
+      v-if="settingsPanel"
+      :panel="settingsPanel"
+      @close="closeSettings"
+      @navigate="navigateSettings"
     />
 
     <CompletionEntrySheet

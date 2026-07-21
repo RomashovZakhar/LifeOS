@@ -90,7 +90,9 @@ LifeOS
 | `/t/:trackerId` | Detail обычного трекера **или** устройство checklist |
 | `/workout` | Workouts module (контекст дня — state/query) |
 | `/workout/templates` | Список шаблонов |
-| `/settings` | Settings |
+| `/settings` | → `/?settings=1` (sheet) |
+| `/settings/appearance` | → `/?settings=appearance` |
+| `/settings/trackers` | → `/?settings=trackers` |
 | `/habits/new` | New tracker |
 
 Sheet логирования привычки — overlay на home. Точные path — на implementation; дух выше.

@@ -1,8 +1,19 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { RouterLink } from 'vue-router'
-import CloseButton from '@/components/ui/CloseButton.vue'
+import AppearanceSheet from '@/components/settings/AppearanceSheet.vue'
+import TrackersOrderSheet from '@/components/settings/TrackersOrderSheet.vue'
+import BottomSheet from '@/components/ui/BottomSheet.vue'
 import { downloadExportJson } from '@/db'
+
+defineProps<{
+  /** Nested panel: root list, or child sheet open. */
+  panel: 'root' | 'appearance' | 'trackers'
+}>()
+
+const emit = defineEmits<{
+  close: []
+  navigate: [panel: 'root' | 'appearance' | 'trackers']
+}>()
 
 const toast = ref<string | null>(null)
 let toastTimer: number | undefined
@@ -26,21 +37,29 @@ function flash(msg: string) {
 </script>
 
 <template>
-  <main class="page-shell">
-    <header class="page-shell-head">
-      <h1 class="page-shell-title">Настройки</h1>
-      <CloseButton to="/" />
-    </header>
-
+  <BottomSheet
+    size="tall"
+    title="Настройки"
+    :layer="40"
+    @close="emit('close')"
+  >
     <section class="page-group">
-      <RouterLink class="page-row between" to="/settings/trackers">
+      <button
+        type="button"
+        class="page-row between"
+        @click="emit('navigate', 'trackers')"
+      >
         <span>Трекеры</span>
         <span class="chev" aria-hidden="true">›</span>
-      </RouterLink>
-      <RouterLink class="page-row between" to="/settings/appearance">
+      </button>
+      <button
+        type="button"
+        class="page-row between"
+        @click="emit('navigate', 'appearance')"
+      >
         <span>Оформление</span>
         <span class="chev" aria-hidden="true">›</span>
-      </RouterLink>
+      </button>
     </section>
 
     <section class="page-group block">
@@ -50,7 +69,16 @@ function flash(msg: string) {
     </section>
 
     <p v-if="toast" class="toast">{{ toast }}</p>
-  </main>
+  </BottomSheet>
+
+  <AppearanceSheet
+    v-if="panel === 'appearance'"
+    @close="emit('navigate', 'root')"
+  />
+  <TrackersOrderSheet
+    v-if="panel === 'trackers'"
+    @close="emit('navigate', 'root')"
+  />
 </template>
 
 <style scoped>
@@ -79,7 +107,7 @@ function flash(msg: string) {
   background: var(--color-surface-3);
   color: var(--color-text-secondary);
   font-size: var(--type-helper);
-  z-index: 30;
+  z-index: 60;
   white-space: nowrap;
 }
 </style>

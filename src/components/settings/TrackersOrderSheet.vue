@@ -1,14 +1,21 @@
 <script setup lang="ts">
 import Sortable from 'sortablejs'
-import { nextTick, onUnmounted, ref, watch } from 'vue'
-import CloseButton from '@/components/ui/CloseButton.vue'
+import { inject, nextTick, onUnmounted, ref, watch } from 'vue'
+import BottomSheet from '@/components/ui/BottomSheet.vue'
 import { useLiveQuery } from '@/composables/useLiveQuery'
+import { SHEET_DISMISS_LOCK_KEY } from '@/composables/sheetDismissLock'
 import { db, reorderTrackers, type Tracker } from '@/db'
 import { trackerTypeLabel } from '@/lib/trackerLabels'
 
+defineEmits<{
+  close: []
+}>()
+
+const dismissLock = inject(SHEET_DISMISS_LOCK_KEY, null)
+
 const trackers = useLiveQuery(
   () => db.trackers.orderBy('sortOrder').toArray(),
-  [],
+  [] as Tracker[],
 )
 
 const listEl = ref<HTMLElement | null>(null)
@@ -46,8 +53,10 @@ function createSortable(el: HTMLElement) {
     direction: 'vertical',
     onStart: () => {
       sorting.value = true
+      dismissLock?.lock()
     },
     onEnd: async (evt) => {
+      dismissLock?.unlock()
       const { oldIndex, newIndex } = evt
       if (
         oldIndex == null ||
@@ -86,17 +95,18 @@ watch(
 )
 
 onUnmounted(() => {
+  dismissLock?.unlock()
   destroySortable()
 })
 </script>
 
 <template>
-  <main class="page-shell">
-    <header class="page-shell-head">
-      <h1 class="page-shell-title">Трекеры</h1>
-      <CloseButton to="/settings" />
-    </header>
-
+  <BottomSheet
+    size="tall"
+    title="Трекеры"
+    :layer="50"
+    @close="$emit('close')"
+  >
     <p class="hint">Перетащи ≡ — порядок колонок в сетке слева направо.</p>
 
     <ul v-if="local.length" ref="listEl" class="list">
@@ -113,7 +123,7 @@ onUnmounted(() => {
       </li>
     </ul>
     <p v-else class="empty">Нет трекеров</p>
-  </main>
+  </BottomSheet>
 </template>
 
 <style scoped>

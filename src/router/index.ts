@@ -62,18 +62,15 @@ const router = createRouter({
     },
     {
       path: '/settings',
-      name: 'settings',
-      component: () => import('@/views/SettingsView.vue'),
+      redirect: { path: '/', query: { settings: '1' } },
     },
     {
       path: '/settings/trackers',
-      name: 'settings-trackers',
-      component: () => import('@/views/TrackersSettingsView.vue'),
+      redirect: { path: '/', query: { settings: 'trackers' } },
     },
     {
       path: '/settings/appearance',
-      name: 'appearance',
-      component: () => import('@/views/AppearanceView.vue'),
+      redirect: { path: '/', query: { settings: 'appearance' } },
     },
   ],
 })

@@ -1,17 +1,21 @@
 <script setup lang="ts">
-import CloseButton from '@/components/ui/CloseButton.vue'
+import BottomSheet from '@/components/ui/BottomSheet.vue'
 import { useSettingsStore } from '@/stores/settings'
+
+defineEmits<{
+  close: []
+}>()
 
 const settings = useSettingsStore()
 </script>
 
 <template>
-  <main class="page-shell">
-    <header class="page-shell-head">
-      <h1 class="page-shell-title">Оформление</h1>
-      <CloseButton to="/settings" />
-    </header>
-
+  <BottomSheet
+    size="auto"
+    title="Оформление"
+    :layer="50"
+    @close="$emit('close')"
+  >
     <section class="page-group" aria-label="Тема">
       <button
         type="button"
@@ -30,7 +34,7 @@ const settings = useSettingsStore()
         Светлая
       </button>
     </section>
-  </main>
+  </BottomSheet>
 </template>
 
 <style scoped>
