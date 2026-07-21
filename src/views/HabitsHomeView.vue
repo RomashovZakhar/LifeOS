@@ -547,7 +547,8 @@ onUnmounted(() => {
 
 .bottom {
   flex: 0 0 auto;
-  padding: 14px 0 10px;
+  /* Safe inset under buttons (native tab-bar pattern); no empty shell gap */
+  padding: 14px 0 calc(8px + var(--safe-bottom));
 }
 
 .toast {
