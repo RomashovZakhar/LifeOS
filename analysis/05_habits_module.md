@@ -276,12 +276,15 @@ Workout portal / checklist Symbol **не** открывают H7.
 
 ```text
 Настройки                                 ✕
+Трекеры             ›
 Оформление          ›
 Экспорт данных
 — спокойный footer без бренда эталона —
 ```
 
 Без Upgrade / iCloud / Rate / Support marketing / Replay intro эталона.
+
+**Трекеры:** список всех trackers; drag ≡ → `reorderTrackers` (`sortOrder`); порядок = колонки сетки слева направо.
 
 **Экспорт:** tap → сформировать JSON (04b) → Share sheet iOS / download. Успех — короткий toast «Файл готов». Ошибка — спокойный текст.
 
@@ -320,8 +323,8 @@ Workout portal / checklist Symbol **не** открывают H7.
 
 ### 5.3 Порядок колонок
 
-V1: порядок = `sortOrder` при создании (append).  
-**Reorder колонок** — не в 05 (нет экрана Trackers internals). Можно добавить позже без ломания модели.
+Порядок = `sortOrder`. Создание — append (`max+1`).  
+**Reorder:** Settings → Трекеры (Sortable ≡) → `reorderTrackers`.
 
 ---
 

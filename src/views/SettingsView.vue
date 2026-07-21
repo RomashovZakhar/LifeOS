@@ -33,6 +33,10 @@ function flash(msg: string) {
     </header>
 
     <section class="page-group">
+      <RouterLink class="page-row between" to="/settings/trackers">
+        <span>Трекеры</span>
+        <span class="chev" aria-hidden="true">›</span>
+      </RouterLink>
       <RouterLink class="page-row between" to="/settings/appearance">
         <span>Оформление</span>
         <span class="chev" aria-hidden="true">›</span>

@@ -88,7 +88,7 @@ function canBeginDismiss(e: TouchEvent): boolean {
 
   if (
     target.closest(
-      ".handle, .sortable-chosen, .sortable-drag, input, textarea, select",
+      ".handle, .sortable-chosen, .sortable-drag, input, textarea, select, .wheel",
     )
   ) {
     return false;

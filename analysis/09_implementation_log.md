@@ -60,4 +60,11 @@ ViewState restore · timer kill/resume · cascades · symbol/portal write-path �
 
 GitHub Pages (`/LifeOS/`): workflow `.github/workflows/deploy-pages.yml`. URL после включения Pages: `https://RomashovZakhar.github.io/LifeOS/`.
 
-V1 queue закрыта (08). Вне V1: import, sync, push, Notes, column reorder, W6, system theme follow.
+### Post-V1 polish (2026-07-21)
+
+- Sheet dismiss не перехватывает `.wheel` (time / duration).
+- Dock: без двойного `--safe-bottom` (только `.app-shell`).
+- Settings → Трекеры: Sortable reorder колонок.
+- Сетка: selected day скроллится к середине видимой зоны.
+
+V1 queue закрыта (08). Вне V1: import, sync, push, Notes, W6, system theme follow.

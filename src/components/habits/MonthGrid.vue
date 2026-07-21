@@ -74,7 +74,7 @@ function isEmptyGlyph(text: string) {
   return text === "·";
 }
 
-/** Scroll only inside `.grid-scroll`, accounting for overlay inset. */
+/** Scroll selected row toward the vertical middle of the visible viewport. */
 async function ensureSelectedVisible() {
   await nextTick();
   await new Promise<void>((resolve) => {
@@ -89,16 +89,13 @@ async function ensureSelectedVisible() {
 
   const rootRect = root.getBoundingClientRect();
   const elRect = el.getBoundingClientRect();
-  const pad = 6;
-  const visibleBottom = rootRect.bottom - Math.max(0, props.bottomInset);
-  let delta = 0;
-  if (elRect.top < rootRect.top + pad) {
-    delta = elRect.top - rootRect.top - pad;
-  } else if (elRect.bottom > visibleBottom - pad) {
-    delta = elRect.bottom - visibleBottom + pad;
-  } else {
-    return;
-  }
+  const inset = Math.max(0, props.bottomInset);
+  const visibleHeight = Math.max(0, rootRect.height - inset);
+  if (visibleHeight < 1) return;
+
+  const elCenter = elRect.top + elRect.height / 2;
+  const viewCenter = rootRect.top + visibleHeight / 2;
+  const delta = elCenter - viewCenter;
 
   const max = Math.max(0, root.scrollHeight - root.clientHeight);
   const next = Math.min(max, Math.max(0, root.scrollTop + delta));

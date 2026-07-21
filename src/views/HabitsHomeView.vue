@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import BottomDock from '@/components/habits/BottomDock.vue'
-import ChecklistDaySheet from '@/components/habits/ChecklistDaySheet.vue'
-import ChecklistDeviceSheet from '@/components/habits/ChecklistDeviceSheet.vue'
-import CompletionEntrySheet from '@/components/habits/CompletionEntrySheet.vue'
-import MonthGrid from '@/components/habits/MonthGrid.vue'
-import MonthYearTitle from '@/components/habits/MonthYearTitle.vue'
-import NewTrackerSheet from '@/components/habits/NewTrackerSheet.vue'
-import NumericEntrySheet from '@/components/habits/NumericEntrySheet.vue'
-import TimeEntrySheet from '@/components/habits/TimeEntrySheet.vue'
-import TodayPanel from '@/components/habits/TodayPanel.vue'
-import TrackerDetailSheet from '@/components/habits/TrackerDetailSheet.vue'
-import WorkoutHistorySheet from '@/components/workout/WorkoutHistorySheet.vue'
-import WorkoutSessionSheet from '@/components/workout/WorkoutSessionSheet.vue'
-import { useLiveQuery } from '@/composables/useLiveQuery'
+import { computed, onUnmounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import BottomDock from "@/components/habits/BottomDock.vue";
+import ChecklistDaySheet from "@/components/habits/ChecklistDaySheet.vue";
+import ChecklistDeviceSheet from "@/components/habits/ChecklistDeviceSheet.vue";
+import CompletionEntrySheet from "@/components/habits/CompletionEntrySheet.vue";
+import MonthGrid from "@/components/habits/MonthGrid.vue";
+import MonthYearTitle from "@/components/habits/MonthYearTitle.vue";
+import NewTrackerSheet from "@/components/habits/NewTrackerSheet.vue";
+import NumericEntrySheet from "@/components/habits/NumericEntrySheet.vue";
+import TimeEntrySheet from "@/components/habits/TimeEntrySheet.vue";
+import TodayPanel from "@/components/habits/TodayPanel.vue";
+import TrackerDetailSheet from "@/components/habits/TrackerDetailSheet.vue";
+import WorkoutHistorySheet from "@/components/workout/WorkoutHistorySheet.vue";
+import WorkoutSessionSheet from "@/components/workout/WorkoutSessionSheet.vue";
+import { useLiveQuery } from "@/composables/useLiveQuery";
 import {
   db,
   monthFromDate,
@@ -25,8 +25,8 @@ import {
   type Entry,
   type Tracker,
   type WorkoutSession,
-} from '@/db'
-import { useSettingsStore } from '@/stores/settings'
+} from "@/db";
+import { useSettingsStore } from "@/stores/settings";
 import {
   buildMonthDays,
   clampDayInMonth,
@@ -35,316 +35,318 @@ import {
   isFutureDate,
   monthTitleParts,
   shiftMonth,
-} from '@/lib/calendar'
-import { cellTextForTracker } from '@/lib/cellDisplay'
+} from "@/lib/calendar";
+import { cellTextForTracker } from "@/lib/cellDisplay";
 
-const router = useRouter()
-const route = useRoute()
-const settings = useSettingsStore()
+const router = useRouter();
+const route = useRoute();
+const settings = useSettingsStore();
 
-const showNewTracker = ref(false)
-const todayOpen = ref(false)
-const futureHintFlash = ref(false)
-const entryTarget = ref<{ tracker: Tracker; date: string } | null>(null)
+const showNewTracker = ref(false);
+const todayOpen = ref(false);
+const futureHintFlash = ref(false);
+const entryTarget = ref<{ tracker: Tracker; date: string } | null>(null);
 const checklistDayTarget = ref<{ trackerId: string; date: string } | null>(
   null,
-)
+);
 
-const today = todayDateFn()
-const viewedMonth = ref(settings.lastViewedMonth || monthFromDate(today))
+const today = todayDateFn();
+const viewedMonth = ref(settings.lastViewedMonth || monthFromDate(today));
 const selectedDate = ref(
-  settings.lastSelectedDate && isDateInMonth(settings.lastSelectedDate, viewedMonth.value)
+  settings.lastSelectedDate &&
+    isDateInMonth(settings.lastSelectedDate, viewedMonth.value)
     ? settings.lastSelectedDate
     : isDateInMonth(today, viewedMonth.value)
       ? today
       : clampDayInMonth(viewedMonth.value, 1),
-)
+);
 
-const title = computed(() => monthTitleParts(viewedMonth.value))
-const days = computed(() => buildMonthDays(viewedMonth.value))
+const title = computed(() => monthTitleParts(viewedMonth.value));
+const days = computed(() => buildMonthDays(viewedMonth.value));
 
 const trackers = useLiveQuery(
-  () => db.trackers.orderBy('sortOrder').toArray(),
+  () => db.trackers.orderBy("sortOrder").toArray(),
   [] as Tracker[],
-)
+);
 
 const monthEntries = useLiveQuery(
   () =>
     db.entries
-      .where('date')
+      .where("date")
       .between(`${viewedMonth.value}-01`, `${viewedMonth.value}-31`, true, true)
       .toArray(),
   [] as Entry[],
   () => viewedMonth.value,
-)
+);
 
 const monthSessions = useLiveQuery(
   () =>
     db.workout_sessions
-      .where('date')
+      .where("date")
       .between(`${viewedMonth.value}-01`, `${viewedMonth.value}-31`, true, true)
       .toArray(),
   [] as WorkoutSession[],
   () => viewedMonth.value,
-)
+);
 
 const monthChecklistDays = useLiveQuery(
   () =>
     db.checklist_days
-      .where('date')
+      .where("date")
       .between(`${viewedMonth.value}-01`, `${viewedMonth.value}-31`, true, true)
       .toArray(),
   [] as ChecklistDay[],
   () => viewedMonth.value,
-)
+);
 
 const entryMap = computed(() => {
-  const m = new Map<string, Entry>()
-  for (const e of monthEntries.value) m.set(`${e.trackerId}|${e.date}`, e)
-  return m
-})
+  const m = new Map<string, Entry>();
+  for (const e of monthEntries.value) m.set(`${e.trackerId}|${e.date}`, e);
+  return m;
+});
 
 const sessionByDate = computed(() => {
-  const m = new Map<string, WorkoutSession>()
-  for (const s of monthSessions.value) m.set(s.date, s)
-  return m
-})
+  const m = new Map<string, WorkoutSession>();
+  for (const s of monthSessions.value) m.set(s.date, s);
+  return m;
+});
 
 const checklistMap = computed(() => {
-  const m = new Map<string, ChecklistDay>()
-  for (const d of monthChecklistDays.value) m.set(`${d.trackerId}|${d.date}`, d)
-  return m
-})
+  const m = new Map<string, ChecklistDay>();
+  for (const d of monthChecklistDays.value)
+    m.set(`${d.trackerId}|${d.date}`, d);
+  return m;
+});
 
 function cellText(trackerId: string, date: string): string {
-  const tracker = trackers.value.find((t) => t.id === trackerId)
-  if (!tracker) return '·'
+  const tracker = trackers.value.find((t) => t.id === trackerId);
+  if (!tracker) return "·";
   return cellTextForTracker(
     tracker,
     date,
     entryMap.value.get(`${trackerId}|${date}`),
     sessionByDate.value.get(date),
     checklistMap.value.get(`${trackerId}|${date}`),
-  )
+  );
 }
 
 watch([viewedMonth, selectedDate], ([month, date]) => {
-  settings.lastViewedMonth = month
-  settings.lastSelectedDate = date
-  void setViewState(month, date)
-})
+  settings.lastViewedMonth = month;
+  settings.lastSelectedDate = date;
+  void setViewState(month, date);
+});
 
 watch(
   () => route.query.new,
   (v) => {
-    if (v != null && v !== '') showNewTracker.value = true
+    if (v != null && v !== "") showNewTracker.value = true;
   },
   { immediate: true },
-)
+);
 
 function openNewTracker() {
-  showNewTracker.value = true
+  showNewTracker.value = true;
 }
 
 function closeNewTracker() {
-  showNewTracker.value = false
+  showNewTracker.value = false;
   if (route.query.new != null) {
-    const q = { ...route.query }
-    delete q.new
-    void router.replace({ path: '/', query: q })
+    const q = { ...route.query };
+    delete q.new;
+    void router.replace({ path: "/", query: q });
   }
 }
 
 const detailTrackerId = computed(() => {
-  const v = route.query.detail
-  return typeof v === 'string' && v ? v : null
-})
+  const v = route.query.detail;
+  return typeof v === "string" && v ? v : null;
+});
 
 /** Kind from already-loaded trackers — avoid stale liveQuery null closing the sheet. */
 const detailKind = computed(() => {
-  const id = detailTrackerId.value
-  if (!id) return null
-  const t = trackers.value.find((x) => x.id === id)
-  if (!t) return 'loading' as const
-  if (t.type === 'checklist') return 'checklist' as const
-  if (t.type === 'workout_portal') return 'portal' as const
-  return 'ordinary' as const
-})
+  const id = detailTrackerId.value;
+  if (!id) return null;
+  const t = trackers.value.find((x) => x.id === id);
+  if (!t) return "loading" as const;
+  if (t.type === "checklist") return "checklist" as const;
+  if (t.type === "workout_portal") return "portal" as const;
+  return "ordinary" as const;
+});
 
 watch(detailTrackerId, async (id) => {
-  if (!id) return
-  const t = await db.trackers.get(id)
-  if (!t) closeDetail()
-})
+  if (!id) return;
+  const t = await db.trackers.get(id);
+  if (!t) closeDetail();
+});
 
 function openDetail(trackerId: string) {
   void router.push({
-    path: '/',
+    path: "/",
     query: { ...route.query, detail: trackerId },
-  })
+  });
 }
 
 function closeDetail() {
-  const q = { ...route.query }
-  delete q.detail
-  void router.replace({ path: '/', query: q })
+  const q = { ...route.query };
+  delete q.detail;
+  void router.replace({ path: "/", query: q });
 }
 
 const workoutDate = computed(() => {
-  const v = route.query.workout
-  return typeof v === 'string' && v ? v : null
-})
+  const v = route.query.workout;
+  return typeof v === "string" && v ? v : null;
+});
 
 function openWorkout(date: string) {
-  closeToday()
-  const q = { ...route.query }
-  delete q.detail
-  q.workout = date
-  void router.push({ path: '/', query: q })
+  closeToday();
+  const q = { ...route.query };
+  delete q.detail;
+  q.workout = date;
+  void router.push({ path: "/", query: q });
 }
 
 function closeWorkout() {
-  const q = { ...route.query }
-  delete q.workout
-  void router.replace({ path: '/', query: q })
+  const q = { ...route.query };
+  delete q.workout;
+  void router.replace({ path: "/", query: q });
 }
 
 function openWorkoutFromHistory(date: string) {
-  closeDetail()
-  openWorkout(date)
+  closeDetail();
+  openWorkout(date);
 }
 
 function openToday() {
-  todayOpen.value = true
+  todayOpen.value = true;
 }
 
 function closeToday() {
-  todayOpen.value = false
+  todayOpen.value = false;
 }
 
 function goMonth(delta: number) {
-  const next = shiftMonth(viewedMonth.value, delta)
-  const dayNum = dayNumberFromDate(selectedDate.value)
-  viewedMonth.value = next
-  selectedDate.value = clampDayInMonth(next, dayNum)
+  const next = shiftMonth(viewedMonth.value, delta);
+  const dayNum = dayNumberFromDate(selectedDate.value);
+  viewedMonth.value = next;
+  selectedDate.value = clampDayInMonth(next, dayNum);
 }
 
 function goToday() {
-  viewedMonth.value = monthFromDate(today)
-  selectedDate.value = today
-  openToday()
+  viewedMonth.value = monthFromDate(today);
+  selectedDate.value = today;
+  openToday();
 }
 
 function onSelectDate(date: string) {
-  selectedDate.value = date
-  openToday()
+  selectedDate.value = date;
+  openToday();
 }
 
 function onOpenSymbol(tracker: Tracker) {
-  openDetail(tracker.id)
+  openDetail(tracker.id);
 }
 
 function openChecklistDay(trackerId: string, date: string) {
-  checklistDayTarget.value = { trackerId, date }
+  checklistDayTarget.value = { trackerId, date };
 }
 
 function closeChecklistDay() {
-  checklistDayTarget.value = null
+  checklistDayTarget.value = null;
 }
 
 function openDeviceFromDay() {
-  const id = checklistDayTarget.value?.trackerId
-  closeChecklistDay()
-  if (id) openDetail(id)
+  const id = checklistDayTarget.value?.trackerId;
+  closeChecklistDay();
+  if (id) openDetail(id);
 }
 
 function openEntrySheet(tracker: Tracker, date: string) {
-  entryTarget.value = { tracker, date }
+  entryTarget.value = { tracker, date };
 }
 
 function closeEntrySheet() {
-  entryTarget.value = null
+  entryTarget.value = null;
 }
 
 function onOpenCell(payload: { tracker: Tracker; date: string }) {
-  selectedDate.value = payload.date
+  selectedDate.value = payload.date;
 
   if (isFutureDate(payload.date, today)) {
-    openToday()
-    flashFutureHint()
-    return
+    openToday();
+    flashFutureHint();
+    return;
   }
 
-  if (payload.tracker.type === 'workout_portal') {
-    openWorkout(payload.date)
-    return
+  if (payload.tracker.type === "workout_portal") {
+    openWorkout(payload.date);
+    return;
   }
-  if (payload.tracker.type === 'checklist') {
-    openChecklistDay(payload.tracker.id, payload.date)
-    return
+  if (payload.tracker.type === "checklist") {
+    openChecklistDay(payload.tracker.id, payload.date);
+    return;
   }
 
-  openEntrySheet(payload.tracker, payload.date)
+  openEntrySheet(payload.tracker, payload.date);
 }
 
 async function onToggleCompletion(tracker: Tracker) {
   if (isFutureDate(selectedDate.value, today)) {
-    flashFutureHint()
-    return
+    flashFutureHint();
+    return;
   }
-  await toggleCompletionEntry(tracker.id, selectedDate.value)
+  await toggleCompletionEntry(tracker.id, selectedDate.value);
 }
 
 function onOpenFromToday(tracker: Tracker) {
   if (isFutureDate(selectedDate.value, today)) {
-    flashFutureHint()
-    return
+    flashFutureHint();
+    return;
   }
-  if (tracker.type === 'workout_portal') {
-    openWorkout(selectedDate.value)
-    return
+  if (tracker.type === "workout_portal") {
+    openWorkout(selectedDate.value);
+    return;
   }
-  if (tracker.type === 'checklist') {
-    openChecklistDay(tracker.id, selectedDate.value)
-    return
+  if (tracker.type === "checklist") {
+    openChecklistDay(tracker.id, selectedDate.value);
+    return;
   }
-  openEntrySheet(tracker, selectedDate.value)
+  openEntrySheet(tracker, selectedDate.value);
 }
 
 function flashFutureHint() {
-  futureHintFlash.value = true
+  futureHintFlash.value = true;
   window.setTimeout(() => {
-    futureHintFlash.value = false
-  }, 1800)
+    futureHintFlash.value = false;
+  }, 1800);
 }
 
-const entryTracker = computed(() => entryTarget.value?.tracker ?? null)
-const entryDate = computed(() => entryTarget.value?.date ?? '')
-const entryType = computed(() => entryTracker.value?.type)
+const entryTracker = computed(() => entryTarget.value?.tracker ?? null);
+const entryDate = computed(() => entryTarget.value?.date ?? "");
+const entryType = computed(() => entryTracker.value?.type);
 
 /** Real Today panel height → scroll content inset (viewport stays full). */
-const todayWrap = ref<HTMLElement | null>(null)
-const todayInsetPx = ref(0)
-let todayRo: ResizeObserver | undefined
+const todayWrap = ref<HTMLElement | null>(null);
+const todayInsetPx = ref(0);
+let todayRo: ResizeObserver | undefined;
 
 watch(todayWrap, (el) => {
-  todayRo?.disconnect()
-  todayRo = undefined
+  todayRo?.disconnect();
+  todayRo = undefined;
   if (!el) {
-    todayInsetPx.value = 0
-    return
+    todayInsetPx.value = 0;
+    return;
   }
   const measure = () => {
-    todayInsetPx.value = Math.round(el.getBoundingClientRect().height)
-  }
-  todayRo = new ResizeObserver(measure)
-  todayRo.observe(el)
-  measure()
-})
+    todayInsetPx.value = Math.round(el.getBoundingClientRect().height);
+  };
+  todayRo = new ResizeObserver(measure);
+  todayRo.observe(el);
+  measure();
+});
 
 onUnmounted(() => {
-  todayRo?.disconnect()
-})
+  todayRo?.disconnect();
+});
 </script>
 
 <template>
@@ -508,7 +510,7 @@ onUnmounted(() => {
 
 .bottom {
   flex: 0 0 auto;
-  padding: 14px 0 calc(10px + var(--safe-bottom));
+  padding: 14px 0 10px;
 }
 
 .toast {

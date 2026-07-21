@@ -66,6 +66,11 @@ const router = createRouter({
       component: () => import('@/views/SettingsView.vue'),
     },
     {
+      path: '/settings/trackers',
+      name: 'settings-trackers',
+      component: () => import('@/views/TrackersSettingsView.vue'),
+    },
+    {
       path: '/settings/appearance',
       name: 'appearance',
       component: () => import('@/views/AppearanceView.vue'),

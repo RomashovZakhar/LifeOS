@@ -39,7 +39,7 @@
 | Portal rename/delete — в Workouts ⋯, не H7 | 05, 06 |
 | C2 = bottom sheet; C1 = device/detail-каркас | 07 ≈ IA/05 паттерны |
 | W1–W5 = tall/nested sheets поверх home (`/?workout=`) | 06 (sheet shell 2026-07-20) |
-| Settings: theme + Export JSON; без marketing эталона | IA, 05, ANTI_GOALS |
+| Settings: theme + Трекеры (reorder) + Export JSON; без marketing эталона | IA, 05, ANTI_GOALS |
 | UI язык RU | IA, 05–07, settings.locale |
 | Notes type отсутствует | везде |
 
@@ -155,7 +155,7 @@
 
 ### Вне V1 (не ставить в очередь)
 
-Import, sync, push, Notes, column reorder UI, exercise progress screen, system theme follow, второй WorkoutPortal, multi-session/day.
+Import, sync, push, Notes, exercise progress screen, system theme follow, второй WorkoutPortal, multi-session/day.
 
 ---
 
