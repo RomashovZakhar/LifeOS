@@ -1,72 +1,74 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import ConfirmDeleteSheet from '@/components/habits/ConfirmDeleteSheet.vue'
-import WorkoutTemplateEditSheet from '@/components/workout/WorkoutTemplateEditSheet.vue'
-import BottomSheet from '@/components/ui/BottomSheet.vue'
-import CloseButton from '@/components/ui/CloseButton.vue'
-import { useLiveQuery } from '@/composables/useLiveQuery'
+import { ref } from "vue";
+import ConfirmDeleteSheet from "@/components/habits/ConfirmDeleteSheet.vue";
+import WorkoutTemplateEditSheet from "@/components/workout/WorkoutTemplateEditSheet.vue";
+import BottomSheet from "@/components/ui/BottomSheet.vue";
+import CloseButton from "@/components/ui/CloseButton.vue";
+import { useLiveQuery } from "@/composables/useLiveQuery";
 import {
   createTemplate,
   deleteTemplate,
   listTemplates,
   startSessionFromTemplate,
   type WorkoutTemplate,
-} from '@/db'
+} from "@/db";
 
 const props = defineProps<{
-  date: string
-  mode: 'select' | 'manage'
-}>()
+  date: string;
+  mode: "select" | "manage";
+}>();
 
 const emit = defineEmits<{
-  close: []
-}>()
+  close: [];
+}>();
 
-const templates = useLiveQuery(() => listTemplates(), [] as WorkoutTemplate[])
+const templates = useLiveQuery(() => listTemplates(), [] as WorkoutTemplate[]);
 
-const showCreate = ref(false)
-const newName = ref('')
-const deleteTarget = ref<WorkoutTemplate | null>(null)
-const editId = ref<string | null>(null)
+const showCreate = ref(false);
+const newName = ref("");
+const deleteTarget = ref<WorkoutTemplate | null>(null);
+const editId = ref<string | null>(null);
 
 async function onSelect(t: WorkoutTemplate) {
-  if (props.mode === 'select') {
-    await startSessionFromTemplate(props.date, t.id)
-    emit('close')
-    return
+  if (props.mode === "select") {
+    await startSessionFromTemplate(props.date, t.id);
+    emit("close");
+    return;
   }
-  editId.value = t.id
+  editId.value = t.id;
 }
 
 function openCreate() {
-  newName.value = ''
-  showCreate.value = true
+  newName.value = "";
+  showCreate.value = true;
 }
 
 async function submitCreate() {
-  const t = await createTemplate(newName.value.trim() || 'Программа')
-  showCreate.value = false
-  editId.value = t.id
+  const t = await createTemplate(newName.value.trim() || "Программа");
+  showCreate.value = false;
+  editId.value = t.id;
 }
 
 async function onDeleteConfirm() {
-  const t = deleteTarget.value
-  if (!t) return
-  await deleteTemplate(t.id)
-  deleteTarget.value = null
+  const t = deleteTarget.value;
+  if (!t) return;
+  await deleteTemplate(t.id);
+  deleteTarget.value = null;
 }
 </script>
 
 <template>
   <BottomSheet
-    size="tall"
+    size="auto"
     aria-label="Программы"
     :layer="50"
     @close="emit('close')"
   >
     <template #header>
       <header class="head">
-        <h1 class="title">{{ mode === 'select' ? 'Выбрать программу' : 'Программы' }}</h1>
+        <h1 class="title">
+          {{ mode === "select" ? "Выбрать программу" : "Программы" }}
+        </h1>
         <CloseButton />
       </header>
     </template>
@@ -114,9 +116,7 @@ async function onDeleteConfirm() {
       <input v-model="newName" class="input" type="text" maxlength="60" />
     </label>
     <template #footer>
-      <button type="button" class="cta" @click="submitCreate">
-        СОЗДАТЬ
-      </button>
+      <button type="button" class="cta" @click="submitCreate">СОЗДАТЬ</button>
     </template>
   </BottomSheet>
 

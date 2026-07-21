@@ -326,7 +326,7 @@ const layer = toRef(props, "layer");
 
 .header-slot {
   flex: 0 0 auto;
-  padding: 4px var(--layout-gutter) 8px;
+  padding: 16px var(--layout-gutter) 8px;
 }
 
 .body {
