@@ -35,7 +35,7 @@
 | Settings мелочь | Можно в том же IDB store `settings` (не localStorage), чтобы Export был одним дампом |
 | Версия схемы | `schemaVersion: number` в settings; миграции на upgrade Dexie |
 | Export | JSON-документ всех stores (обязателен по IA) |
-| Import V1 | Опционально позже; Export достаточно для бэкапа вручную |
+| Import V1 | **Replace** полного JSON-экспорта (confirm); merge — вне scope |
 
 Почему не SQLite/wasm в V1: лишний вес; IDB хватает для объёма «годы × десятки колонок × сессии».
 
@@ -322,6 +322,17 @@ workout_portal tracker ──presence── completed workout_sessions (glyph `x
 ```
 
 Один файл = полный бэкап. CSV не нужен в V1 (закрывает отложенный вопрос IA §13).
+
+### Import (replace)
+
+1. Settings → **Импорт данных** → выбор `.json`.  
+2. Parse + validate: объект LifeOS export, все массивы на месте, `schemaVersion ===` текущему `SCHEMA_VERSION` приложения (иначе ошибка с текстом версий).  
+3. Confirm: «текущие данные будут полностью заменены».  
+4. Одна Dexie-транзакция: `clear` всех stores → `put`/`bulkPut` из файла; `settings.id = 'app'`, `settings.schemaVersion` = текущий.  
+5. Применить `theme` из файла к document.  
+6. Toast успех / спокойная ошибка при битом файле (без partial write).
+
+**Не в scope:** merge по id, импорт CSV, импорт с чужого `schemaVersion` без миграции.
 
 ---
 

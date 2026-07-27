@@ -71,7 +71,11 @@ GitHub Pages (`/LifeOS/`): workflow `.github/workflows/deploy-pages.yml`. URL п
 - Сетка: selected day скроллится к середине видимой зоны.
 - Workout IA (2026-07-21): Symbol/detail = Программы + Каталог + rename/delete колонки; день без ⋯; A0 primary «ВЫБРАТЬ ПРОГРАММУ»; C без add exercise; UI «шаблон»→«программа».
 
-V1 queue закрыта (08). Вне V1: import, sync, push, Notes, W6, system theme follow.
+V1 queue закрыта (08). Вне V1: sync, push, Notes, W6, system theme follow, import merge.
+
+### Import (2026-07-27)
+
+Settings → Импорт данных: replace из LifeOS export JSON (`src/db/import.ts`), confirm перед wipe.
 
 ---
 

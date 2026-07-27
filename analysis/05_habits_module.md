@@ -296,6 +296,7 @@ Sheet поверх home (`/?settings=1`). Вложенные: Трекеры / �
 Трекеры             ›
 Оформление          ›
 Экспорт данных
+Импорт данных
 ```
 
 Без Upgrade / iCloud / Rate / Support marketing / Replay intro эталона.
@@ -303,6 +304,8 @@ Sheet поверх home (`/?settings=1`). Вложенные: Трекеры / �
 **Трекеры:** sheet; drag ≡ → `reorderTrackers` (`sortOrder`); порядок = колонки сетки слева направо.
 
 **Экспорт:** tap → сформировать JSON (04b) → Share sheet iOS / download. Успех — короткий toast «Файл готов». Ошибка — спокойный текст.
+
+**Импорт:** tap → file picker `.json` → validate → confirm replace → wipe+load (04b Import). Успех — toast «Данные импортированы».
 
 ---
 
@@ -460,6 +463,7 @@ Habits **владеет** home chrome и отображением всех ко�
 | Settings                 | Настройки                        |
 | Appearance               | Оформление                       |
 | Export Data              | Экспорт данных                   |
+| Import Data              | Импорт данных                    |
 | Next day                 | Следующий день                   |
 | Week/Month/Year/All-Time | Неделя / Месяц / Год / Всё время |
 | ENTRIES                  | ЗАПИСИ                           |
