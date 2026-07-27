@@ -31,6 +31,7 @@
 | 23 | `photo_23_2026-07-19_18-50-14.jpg` | Sheet — delete Wake entry | Dark. DELETE ENTRY |
 | 24 | `photo_24_2026-07-19_18-50-14.jpg` | Tracker detail | Dark. Meta, Week/Month/Year, heatmap, EDIT/DELETE |
 | 25 | `photo_25_2026-07-19_18-50-14.jpg` | Tracker detail — history list | Dark. ENTRIES + History list |
+| 26 | `photo_26.png` | Tracker detail — Weight stats | Dark. Meta+Unit, range chips, 2×2 AVERAGE/ENTRIES/LOWEST/HIGHEST. **Нет** графика в эталоне; LifeOS добавляет chart — см. `10_detail_stats.md` |
 
 ## Coverage gaps (ask if needed)
 

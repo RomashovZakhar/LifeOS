@@ -252,19 +252,34 @@ Reuse: поле `M:SS` (минуты:секунды; минуты могут б�
 Вход: Symbol обычного трекера.  
 **UI:** bottom sheet ~90vh, фон `surface-2` (серый, не OLED black); поверх Habits home. Закрытие: swipe / ✕ / backdrop.
 
+**Полная спека stats + chart:** `analysis/10_detail_stats.md` (источник истины). Кратко:
+
+**Completion:**
+
 ```text
 Name                                          ✕
-Symbol / Тип (badge) / Создано
+Symbol / Тип / Создано
 [ Неделя | Месяц | Год | Всё время ]
-ENTRIES  {count}
-History heatmap
-Список записей по периоду
+ЗАПИСИ  {count}
+История: heatmap + список
+ИЗМЕНИТЬ | УДАЛИТЬ
+```
+
+**time / count / distance / weight:**
+
+```text
+Name                                          ✕
+Symbol / Тип / [Unit badge] / Создано
+[ Неделя | Месяц | Год | Всё время ]
+2×2: СРЕДНЕЕ | ЗАПИСИ / МИН|РАНЬШЕ | МАКС|ПОЗЖЕ
+Trend chart (uPlot line + points)
+История: heatmap + список
 ИЗМЕНИТЬ | УДАЛИТЬ
 ```
 
 **Range chips** — стиль fill selected (03); текст вертикально по центру.  
 **Range bounds:** week = 7 дней; month = с 1-го числа; year = 365 дней; **all = все записи ≤ сегодня** (не резать по `createdAt`).  
-**Heatmap / list** — наличие entry в день.  
+**Heatmap / list** — наличие entry в день (heatmap window не клипается chips).  
 **ИЗМЕНИТЬ** → форма как New tracker, но **без смены Type** (type readonly/disabled). Name, Symbol, unit/format editable.  
 **УДАЛИТЬ** → confirm → cascade entries (04b).
 
@@ -358,7 +373,7 @@ Habits **владеет** home chrome и отображением всех ко�
 ## 7. История и обзор
 
 - Home grid = главный обзор во времени.
-- H7 detail = один ordinary tracker (week/month/year/all + heatmap + list).
+- H7 detail = один ordinary tracker (week/month/year/all + heatmap + list; для numeric — chart + 2×2, см. `10_detail_stats.md`).
 - Portal/checklist history — в 06/07, не дублировать H7.
 
 ---

@@ -2,6 +2,8 @@
 import { computed, ref, watch } from 'vue'
 import CompletionEntrySheet from '@/components/habits/CompletionEntrySheet.vue'
 import ConfirmDeleteSheet from '@/components/habits/ConfirmDeleteSheet.vue'
+import DetailStatGrid from '@/components/habits/DetailStatGrid.vue'
+import DetailTrendChart from '@/components/habits/DetailTrendChart.vue'
 import HistoryHeatmap from '@/components/habits/HistoryHeatmap.vue'
 import NewTrackerSheet from '@/components/habits/NewTrackerSheet.vue'
 import NumericEntrySheet from '@/components/habits/NumericEntrySheet.vue'
@@ -26,6 +28,12 @@ import {
   monthSectionTitle,
   type DetailRange,
 } from '@/lib/detailRange'
+import {
+  buildDetailPoints,
+  buildDetailStats,
+  isNumericDetailType,
+  unitBadgeLabel,
+} from '@/lib/detailStats'
 import {
   isOrdinaryTrackerType,
   trackerTypeBadge,
@@ -84,6 +92,47 @@ const rangedEntries = computed(() =>
 )
 
 const entryCount = computed(() => rangedEntries.value.length)
+
+const showNumericDetail = computed(() => {
+  const t = tracker.value
+  return !!t && isNumericDetailType(t.type)
+})
+
+const numericValueType = computed(() => {
+  const t = tracker.value
+  if (!t || !isNumericDetailType(t.type)) return null
+  return t.type
+})
+
+const detailPoints = computed(() => {
+  const t = tracker.value
+  if (!t || !isNumericDetailType(t.type)) return []
+  return buildDetailPoints(t, rangedEntries.value)
+})
+
+const detailStats = computed(() => {
+  const t = tracker.value
+  if (!t || !isNumericDetailType(t.type)) return null
+  return buildDetailStats(t, detailPoints.value)
+})
+
+const unitBadge = computed(() => {
+  const t = tracker.value
+  if (!t) return null
+  return unitBadgeLabel(t)
+})
+
+const chartTimeFormat = computed((): '24h' | 'ampm' => {
+  const t = tracker.value
+  if (
+    t?.config &&
+    'timeFormat' in t.config &&
+    t.config.timeFormat === 'ampm'
+  ) {
+    return 'ampm'
+  }
+  return '24h'
+})
 
 const filledDates = computed(() => {
   const s = new Set<string>()
@@ -177,6 +226,12 @@ const entryType = computed(() => entryTarget.value?.tracker.type)
           <span class="badge">{{ trackerTypeBadge(tracker.type) }}</span>
         </dd>
       </div>
+      <div v-if="unitBadge" class="meta-row">
+        <dt>Unit</dt>
+        <dd>
+          <span class="badge">{{ unitBadge }}</span>
+        </dd>
+      </div>
       <div class="meta-row">
         <dt>Создано</dt>
         <dd>{{ formatCreatedRu(tracker.createdAt) }}</dd>
@@ -191,7 +246,16 @@ const entryType = computed(() => entryTarget.value?.tracker.type)
       />
     </div>
 
-    <section class="stat" aria-label="Записи">
+    <template v-if="showNumericDetail && detailStats && numericValueType">
+      <DetailStatGrid :cards="detailStats.cards" />
+      <DetailTrendChart
+        :points="detailPoints"
+        :value-type="numericValueType"
+        :time-format="chartTimeFormat"
+        @select-date="openEntry"
+      />
+    </template>
+    <section v-else class="stat" aria-label="Записи">
       <p class="stat-label">ЗАПИСИ</p>
       <p class="stat-value mono">{{ entryCount }}</p>
     </section>

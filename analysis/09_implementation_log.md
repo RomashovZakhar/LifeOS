@@ -72,3 +72,14 @@ GitHub Pages (`/LifeOS/`): workflow `.github/workflows/deploy-pages.yml`. URL п
 - Workout IA (2026-07-21): Symbol/detail = Программы + Каталог + rename/delete колонки; день без ⋯; A0 primary «ВЫБРАТЬ ПРОГРАММУ»; C без add exercise; UI «шаблон»→«программа».
 
 V1 queue закрыта (08). Вне V1: import, sync, push, Notes, W6, system theme follow.
+
+---
+
+## Post-V1 — H7 stats + trend chart (2026-07-27)
+
+**Спека:** `analysis/10_detail_stats.md`  
+**Эталон cards:** `analysis/screenshots/photo_26.png`
+
+- time / count / distance / weight: Unit meta (где уместно) → 2×2 StatGrid → uPlot line+points → heatmap + list.
+- completion: без chart/2×2 (только ЗАПИСИ).
+- Pure aggregates: `src/lib/detailStats.ts`.

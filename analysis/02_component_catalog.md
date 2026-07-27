@@ -45,7 +45,7 @@
 | C28 | SheetActionBar | 21–22 | да |
 | C29 | ModalFormShell | 07–08, 12, 16–19 | да |
 | C30 | MetaRow | 24 | да |
-| C31 | StatCard | 24–25 | да |
+| C31 | StatCard / DetailStatGrid | 24–26 | да |
 | C32 | HistoryHeatmap | 24–25 | да |
 | C33 | HistoryEntryRow | 25 | да |
 | C34 | DetailActionBar | 24–25 | да |
@@ -55,6 +55,7 @@
 | C38 | OnboardingPageDots | 01–03 | паттерн опционален |
 | C39 | TiltedPreviewCard | 02–03 | паттерн опционален |
 | C40 | OnboardingPrimaryButton | 01–03 | вариант C03 (инверсия) |
+| C41 | DetailTrendChart | photo_26 + LifeOS | да |
 
 ---
 
@@ -354,12 +355,25 @@
 - **Анатомия:** label leading (`Symbol` / `Type` / `Created`) + value trailing (текст или C13).
 - **Reuse:** detail header block.
 
-### C31 — StatCard
+### C31 — StatCard / DetailStatGrid
 
-- **Назначение:** агрегат за выбранный range.
-- **Анатомия:** large rounded card; small caps label `ENTRIES` top-leading; huge number value.
-- **Состояния:** `1` при Week. Другие ranges / нули — **[нет скрина]** (chips есть, контент не переключён на кадрах).
-- **Reuse:** detail.
+- **Назначение:** агрегат(ы) за выбранный range.
+- **Анатомия (одна карточка):** large rounded card; small caps label top-leading; huge number (+ optional unit + optional date subline).
+- **Варианты:**
+  - **Completion:** одна full-width `ЗАПИСИ`.
+  - **time / count / distance / weight:** 2×2 grid (`СРЕДНЕЕ` | `ЗАПИСИ` / `МИН`|`РАНЬШЕ` | `МАКС`|`ПОЗЖЕ`) — см. `10_detail_stats.md`, эталон `photo_26`.
+- **Состояния:** N=0 → `—` и ЗАПИСИ `0`; N=1 → min=max=единственная точка.
+- **Reuse:** H7 detail.
+
+### C41 — DetailTrendChart
+
+- **Назначение:** линейный тренд значений ordinary tracker за range.
+- **Анатомия:** uPlot; line + points; без легенды/toolbar; tokens для цвета.
+- **Типы:** time / count / distance / weight. **Не** completion.
+- **Interaction:** tap точки → open entry sheet того дня.
+- **Empty:** N=0 → текст «Недостаточно данных».
+- **Спека:** `10_detail_stats.md`.
+- **Reuse:** H7 detail.
 
 ### C32 — HistoryHeatmap
 
@@ -444,7 +458,8 @@ Tracker detail
 ├── CloseButton + title
 ├── MetaRows (+ TypeBadge)
 ├── ChipSelect (range)
-├── StatCard
+├── StatCard / DetailStatGrid
+├── DetailTrendChart
 ├── HistoryHeatmap
 ├── HistoryEntryRow(s)
 └── DetailActionBar
