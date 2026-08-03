@@ -33,6 +33,17 @@ const MONTHS_RU_BADGE = [
 /** JS getDay(): 0=Sun … 6=Sat → однобуквенные RU (Пн=П … Вс=В) */
 const WEEKDAY_LETTER_RU = ['В', 'П', 'В', 'С', 'Ч', 'П', 'С'] as const
 
+/** JS getDay(): 0=Sun … 6=Sat → полные имена */
+const WEEKDAY_FULL_RU = [
+  'Воскресенье',
+  'Понедельник',
+  'Вторник',
+  'Среда',
+  'Четверг',
+  'Пятница',
+  'Суббота',
+] as const
+
 function pad(n: number): string {
   return String(n).padStart(2, '0')
 }
@@ -125,6 +136,12 @@ export function formatDateFullRu(date: string): string {
     'декабря',
   ] as const
   return `${day} ${genitive[monthIndex]}`
+}
+
+/** «Понедельник» */
+export function formatWeekdayFullRu(date: string): string {
+  const d = new Date(`${date}T12:00:00`)
+  return WEEKDAY_FULL_RU[d.getDay()]
 }
 
 export function badgeMonthRu(date: string): string {

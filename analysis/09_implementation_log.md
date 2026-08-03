@@ -77,6 +77,10 @@ V1 queue закрыта (08). Вне V1: sync, push, Notes, W6, system theme fol
 
 Settings → Импорт данных: replace из LifeOS export JSON (`src/db/import.ts`), confirm перед wipe.
 
+### Cold start → сегодня + Today (2026-08-03)
+
+PWA reload / первый mount home: месяц=сегодня, selected=сегодня, scroll, открыть H2. Warm resume без изменений. Не форсить поверх settings/detail/workout/new.
+
 ---
 
 ## Post-V1 — H7 stats + trend chart (2026-07-27)
@@ -87,3 +91,7 @@ Settings → Импорт данных: replace из LifeOS export JSON (`src/db
 - time / count / distance / weight: Unit meta (где уместно) → 2×2 StatGrid → uPlot line+points → heatmap + list.
 - completion: без chart/2×2 (только ЗАПИСИ).
 - Pure aggregates: `src/lib/detailStats.ts`.
+
+### Cold start → Today (2026-08-03)
+
+PWA full load = СЕГОДНЯ + open H2 + scroll to today. Warm resume (no reload) keeps in-memory state. Skip forcing Today if `settings`/`detail`/`workout`/`new` query present.

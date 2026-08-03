@@ -1,73 +1,73 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from 'vue'
-import BottomSheet from '@/components/ui/BottomSheet.vue'
-import { formatDurationMinSec } from '@/lib/workoutFormat'
+import { nextTick, onMounted, ref, watch } from "vue";
+import BottomSheet from "@/components/ui/BottomSheet.vue";
+import { formatDurationMinSec } from "@/lib/workoutFormat";
 
 const props = defineProps<{
-  durationSeconds: number
-}>()
+  durationSeconds: number;
+}>();
 
 const emit = defineEmits<{
-  close: []
-  save: [seconds: number]
-}>()
+  close: [];
+  save: [seconds: number];
+}>();
 
-const MAX_MIN = 180
-const minutes = Array.from({ length: MAX_MIN + 1 }, (_, i) => i)
-const seconds = Array.from({ length: 60 }, (_, i) => i)
+const MAX_MIN = 180;
+const minutes = Array.from({ length: MAX_MIN + 1 }, (_, i) => i);
+const seconds = Array.from({ length: 60 }, (_, i) => i);
 
-const minute = ref(0)
-const second = ref(0)
-const minuteList = ref<HTMLElement | null>(null)
-const secondList = ref<HTMLElement | null>(null)
-const ITEM = 40
+const minute = ref(0);
+const second = ref(0);
+const minuteList = ref<HTMLElement | null>(null);
+const secondList = ref<HTMLElement | null>(null);
+const ITEM = 40;
 
 function applyFromProps(total: number) {
-  const sec = Math.max(0, Math.floor(total))
-  minute.value = Math.min(MAX_MIN, Math.floor(sec / 60))
-  second.value = sec % 60
+  const sec = Math.max(0, Math.floor(total));
+  minute.value = Math.min(MAX_MIN, Math.floor(sec / 60));
+  second.value = sec % 60;
 }
 
 watch(
   () => props.durationSeconds,
   (s) => applyFromProps(s),
   { immediate: true },
-)
+);
 
 onMounted(async () => {
-  await nextTick()
-  scrollToValue(minuteList.value, minute.value)
-  scrollToValue(secondList.value, second.value)
-})
+  await nextTick();
+  scrollToValue(minuteList.value, minute.value);
+  scrollToValue(secondList.value, second.value);
+});
 
 function scrollToValue(el: HTMLElement | null, value: number) {
-  if (!el) return
-  el.scrollTop = value * ITEM
+  if (!el) return;
+  el.scrollTop = value * ITEM;
 }
 
 function onMinuteScroll() {
-  if (!minuteList.value) return
+  if (!minuteList.value) return;
   minute.value = Math.min(
     MAX_MIN,
     Math.max(0, Math.round(minuteList.value.scrollTop / ITEM)),
-  )
+  );
 }
 
 function onSecondScroll() {
-  if (!secondList.value) return
+  if (!secondList.value) return;
   second.value = Math.min(
     59,
     Math.max(0, Math.round(secondList.value.scrollTop / ITEM)),
-  )
+  );
 }
 
 function pad(n: number) {
-  return String(n).padStart(2, '0')
+  return String(n).padStart(2, "0");
 }
 
 function onSave() {
-  emit('save', minute.value * 60 + second.value)
-  emit('close')
+  emit("save", minute.value * 60 + second.value);
+  emit("close");
 }
 </script>
 
@@ -82,20 +82,12 @@ function onSave() {
     <div class="wheel-wrap">
       <div class="wheel">
         <div class="highlight" aria-hidden="true" />
-        <div
-          ref="minuteList"
-          class="col mins"
-          @scroll.passive="onMinuteScroll"
-        >
+        <div ref="minuteList" class="col mins" @scroll.passive="onMinuteScroll">
           <div class="pad" />
           <div v-for="m in minutes" :key="m" class="item">{{ pad(m) }}</div>
           <div class="pad" />
         </div>
-        <div
-          ref="secondList"
-          class="col secs"
-          @scroll.passive="onSecondScroll"
-        >
+        <div ref="secondList" class="col secs" @scroll.passive="onSecondScroll">
           <div class="pad" />
           <div v-for="s in seconds" :key="s" class="item">{{ pad(s) }}</div>
           <div class="pad" />

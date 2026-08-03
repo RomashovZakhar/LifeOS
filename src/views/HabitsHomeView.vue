@@ -32,7 +32,6 @@ import {
   buildMonthDays,
   clampDayInMonth,
   dayNumberFromDate,
-  isDateInMonth,
   isFutureDate,
   monthTitleParts,
   shiftMonth,
@@ -43,27 +42,29 @@ const router = useRouter();
 const route = useRoute();
 const settings = useSettingsStore();
 
+const today = todayDateFn();
+/** Cold start: always current month + today (05 H1). Warm resume keeps Vue state. */
+const viewedMonth = ref(monthFromDate(today));
+const selectedDate = ref(today);
+
+const title = computed(() => monthTitleParts(viewedMonth.value));
+const days = computed(() => buildMonthDays(viewedMonth.value));
+
+function hasBlockingOverlayQuery(): boolean {
+  const q = route.query;
+  return (
+    q.settings != null || q.detail != null || q.workout != null || q.new != null
+  );
+}
+
 const showNewTracker = ref(false);
-const todayOpen = ref(false);
+/** Open Today on cold start unless a query sheet already owns the screen. */
+const todayOpen = ref(!hasBlockingOverlayQuery());
 const futureHintFlash = ref(false);
 const entryTarget = ref<{ tracker: Tracker; date: string } | null>(null);
 const checklistDayTarget = ref<{ trackerId: string; date: string } | null>(
   null,
 );
-
-const today = todayDateFn();
-const viewedMonth = ref(settings.lastViewedMonth || monthFromDate(today));
-const selectedDate = ref(
-  settings.lastSelectedDate &&
-    isDateInMonth(settings.lastSelectedDate, viewedMonth.value)
-    ? settings.lastSelectedDate
-    : isDateInMonth(today, viewedMonth.value)
-      ? today
-      : clampDayInMonth(viewedMonth.value, 1),
-);
-
-const title = computed(() => monthTitleParts(viewedMonth.value));
-const days = computed(() => buildMonthDays(viewedMonth.value));
 
 const trackers = useLiveQuery(
   () => db.trackers.orderBy("sortOrder").toArray(),

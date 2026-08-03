@@ -1,99 +1,95 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import MiniCalendarBadge from '@/components/habits/MiniCalendarBadge.vue'
-import { useSwipeDismiss } from '@/composables/useSwipeDismiss'
-import type { ChecklistDay, Entry, Tracker, WorkoutSession } from '@/db'
+import { computed } from "vue";
+import MiniCalendarBadge from "@/components/habits/MiniCalendarBadge.vue";
+import { useSwipeDismiss } from "@/composables/useSwipeDismiss";
+import type { ChecklistDay, Entry, Tracker, WorkoutSession } from "@/db";
 import {
   badgeMonthRu,
   dayNumberFromDate,
-  formatDateFullRu,
+  formatWeekdayFullRu,
   isFutureDate,
-} from '@/lib/calendar'
-import { cellTextForTracker } from '@/lib/cellDisplay'
+} from "@/lib/calendar";
+import { cellTextForTracker } from "@/lib/cellDisplay";
 
 const props = defineProps<{
-  date: string
-  todayDate: string
-  trackers: Tracker[]
-  entryMap: Map<string, Entry>
-  sessionByDate: Map<string, WorkoutSession>
-  checklistMap: Map<string, ChecklistDay>
-}>()
+  date: string;
+  todayDate: string;
+  trackers: Tracker[];
+  entryMap: Map<string, Entry>;
+  sessionByDate: Map<string, WorkoutSession>;
+  checklistMap: Map<string, ChecklistDay>;
+}>();
 
 const emit = defineEmits<{
-  close: []
-  toggleCompletion: [tracker: Tracker]
-  openTracker: [tracker: Tracker]
-  futureHint: []
-}>()
+  close: [];
+  toggleCompletion: [tracker: Tracker];
+  openTracker: [tracker: Tracker];
+  futureHint: [];
+}>();
 
 const { dragY, dragging, onTouchStart, onTouchMove, onTouchEnd } =
-  useSwipeDismiss(() => emit('close'), 88)
+  useSwipeDismiss(() => emit("close"), 88);
 
-const isToday = computed(() => props.date === props.todayDate)
-const isFuture = computed(() => isFutureDate(props.date, props.todayDate))
+const isToday = computed(() => props.date === props.todayDate);
+const isFuture = computed(() => isFutureDate(props.date, props.todayDate));
 
 const title = computed(() =>
-  isToday.value ? 'Сегодня' : formatDateFullRu(props.date),
-)
+  isToday.value ? "Сегодня" : formatWeekdayFullRu(props.date),
+);
 
 const dayLabel = computed(() =>
-  String(dayNumberFromDate(props.date)).padStart(2, '0'),
-)
-const monthLabel = computed(() => badgeMonthRu(props.date))
+  String(dayNumberFromDate(props.date)).padStart(2, "0"),
+);
+const monthLabel = computed(() => badgeMonthRu(props.date));
 
 const panelStyle = computed(() => {
-  if (!dragging.value && dragY.value === 0) return undefined
+  if (!dragging.value && dragY.value === 0) return undefined;
   return {
     transform: `translateY(${dragY.value}px)`,
     transition: dragging.value
-      ? 'none'
-      : 'transform 0.28s cubic-bezier(0.22, 1, 0.36, 1)',
-  }
-})
+      ? "none"
+      : "transform 0.28s cubic-bezier(0.22, 1, 0.36, 1)",
+  };
+});
 
 function entryFor(t: Tracker) {
-  return props.entryMap.get(`${t.id}|${props.date}`)
+  return props.entryMap.get(`${t.id}|${props.date}`);
 }
 
 function trailing(t: Tracker): string {
-  if (t.type === 'completion' || t.type === 'workout_portal') return ''
+  if (t.type === "completion" || t.type === "workout_portal") return "";
   const text = cellTextForTracker(
     t,
     props.date,
     entryFor(t),
     props.sessionByDate.get(props.date),
     props.checklistMap.get(`${t.id}|${props.date}`),
-  )
-  return text === '·' ? '' : text
+  );
+  return text === "·" ? "" : text;
 }
 
 function isDoneOrdinary(t: Tracker): boolean {
-  const e = entryFor(t)
-  if (!e) return false
-  if (t.type === 'completion') return e.value.kind === 'completion'
-  return true
+  const e = entryFor(t);
+  if (!e) return false;
+  if (t.type === "completion") return e.value.kind === "completion";
+  return true;
 }
 
 function onRowTap(t: Tracker) {
   if (isFuture.value) {
-    emit('futureHint')
-    return
+    emit("futureHint");
+    return;
   }
-  if (t.type === 'completion') {
-    emit('toggleCompletion', t)
-    return
+  if (t.type === "completion") {
+    emit("toggleCompletion", t);
+    return;
   }
-  emit('openTracker', t)
+  emit("openTracker", t);
 }
 </script>
 
 <template>
-  <section
-    class="today"
-    :class="{ dragging }"
-    :style="panelStyle"
-  >
+  <section class="today" :class="{ dragging }" :style="panelStyle">
     <div
       class="chrome"
       @touchstart.passive="onTouchStart"
@@ -154,7 +150,8 @@ function onRowTap(t: Tracker) {
             v-else-if="t.type === 'workout_portal' || t.type === 'checklist'"
             class="chev"
             aria-hidden="true"
-          >›</span>
+            >›</span
+          >
         </button>
       </li>
     </ul>

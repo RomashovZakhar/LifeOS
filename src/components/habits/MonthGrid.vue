@@ -114,6 +114,7 @@ watch(
   () => {
     void ensureSelectedVisible();
   },
+  { immediate: true },
 );
 
 defineExpose({ scrollSelectedIntoView: ensureSelectedVisible });
