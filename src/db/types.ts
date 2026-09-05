@@ -104,6 +104,8 @@ export interface SessionExercise {
   exerciseId: string
   sortOrder: number
   sets: SessionSet[]
+  /** Cue for the next time this exercise is opened. */
+  note?: string
 }
 
 export interface WorkoutSession {

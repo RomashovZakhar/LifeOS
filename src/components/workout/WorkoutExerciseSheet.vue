@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import ConfirmDeleteSheet from '@/components/habits/ConfirmDeleteSheet.vue'
 import SetDurationWheelSheet from '@/components/workout/SetDurationWheelSheet.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
@@ -7,9 +7,11 @@ import CloseButton from '@/components/ui/CloseButton.vue'
 import { useLiveQuery } from '@/composables/useLiveQuery'
 import {
   db,
+  EXERCISE_NOTE_MAX,
   getExercise,
   lastCompletedSetsForExercise,
   removeSessionExercise,
+  updateSessionExerciseNote,
   updateSessionExerciseSets,
   type SessionSet,
   type TrackingMode,
@@ -57,26 +59,35 @@ const mode = computed<TrackingMode>(
 )
 
 const lastSets = ref<SessionSet[] | null>(null)
+const lastNote = ref<string | null>(null)
 
 watch(
   () => [sessionExercise.value?.exerciseId, props.date] as const,
   async ([exerciseId]) => {
     if (!exerciseId) {
       lastSets.value = null
+      lastNote.value = null
       return
     }
-    lastSets.value = await lastCompletedSetsForExercise(exerciseId, props.date)
+    const last = await lastCompletedSetsForExercise(exerciseId, props.date)
+    lastSets.value = last?.sets ?? null
+    lastNote.value = last?.note ?? null
   },
   { immediate: true },
 )
 
 const sets = ref<SessionSet[]>([])
+const note = ref('')
+const noteOpen = ref(false)
+const noteField = ref<HTMLTextAreaElement | null>(null)
 
 watch(
   sessionExercise,
   (se) => {
     if (!se) return
     sets.value = se.sets.map((s) => ({ ...s }))
+    note.value = se.note ?? ''
+    if (se.note?.trim()) noteOpen.value = true
   },
   { immediate: true },
 )
@@ -103,6 +114,29 @@ async function persist() {
   const s = session.value
   if (!s) return
   await updateSessionExerciseSets(s.id, props.sessionExerciseId, sets.value)
+}
+
+async function persistNote() {
+  const s = session.value
+  if (!s) return
+  await updateSessionExerciseNote(s.id, props.sessionExerciseId, note.value)
+}
+
+async function openNote() {
+  noteOpen.value = true
+  await nextTick()
+  noteField.value?.focus()
+}
+
+function onNoteInput(raw: string) {
+  note.value = raw.slice(0, EXERCISE_NOTE_MAX)
+  void persistNote()
+}
+
+function onNoteBlur() {
+  note.value = note.value.trim().slice(0, EXERCISE_NOTE_MAX)
+  if (!note.value) noteOpen.value = false
+  void persistNote()
 }
 
 function addSet() {
@@ -208,7 +242,10 @@ watch(sessionExercise, (se) => {
 
     <section class="last">
       <h2 class="section">Прошлый раз</h2>
-      <p class="last-line mono">{{ lastLine }}</p>
+      <div class="card">
+        <p class="last-line mono">{{ lastLine }}</p>
+        <p v-if="lastNote" class="last-note">{{ lastNote }}</p>
+      </div>
     </section>
 
     <section class="sets">
@@ -283,6 +320,25 @@ watch(sessionExercise, (se) => {
       <button type="button" class="add" @click="addSet">+ Подход</button>
     </section>
 
+    <section class="note">
+      <h2 class="section">Заметка</h2>
+      <button v-if="!noteOpen" type="button" class="add" @click="openNote">
+        + Заметка
+      </button>
+      <div v-else class="card note-card">
+        <textarea
+          ref="noteField"
+          class="note-input"
+          rows="2"
+          :maxlength="EXERCISE_NOTE_MAX"
+          :value="note"
+          placeholder="Себе на следующий раз"
+          @input="onNoteInput(($event.target as HTMLTextAreaElement).value)"
+          @blur="onNoteBlur"
+        />
+      </div>
+    </section>
+
     <button type="button" class="danger-link" @click="showDelete = true">
       УДАЛИТЬ УПРАЖНЕНИЕ
     </button>
@@ -344,13 +400,48 @@ watch(sessionExercise, (se) => {
   margin-top: 8px;
 }
 
-.last-line {
-  margin: 0;
+.note {
+  margin-top: 22px;
+}
+
+.card {
   padding: 16px;
   border-radius: 14px;
   background: var(--color-surface-3);
+}
+
+.last-line {
+  margin: 0;
   color: var(--color-text-secondary);
   font-size: 0.9375rem;
+}
+
+.last-note {
+  margin: 10px 0 0;
+  color: var(--color-text-primary);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.note-card {
+  padding: 12px 14px;
+}
+
+.note-input {
+  display: block;
+  width: 100%;
+  min-height: 52px;
+  resize: none;
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.note-input::placeholder {
+  color: var(--color-text-secondary);
 }
 
 .sets {

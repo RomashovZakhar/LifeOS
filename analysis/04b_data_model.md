@@ -224,6 +224,7 @@ type SessionExercise = {
   exerciseId: string
   sortOrder: number
   sets: SessionSet[]
+  note?: string          // optional; cue on the next open of this exercise
 }
 
 type SessionSet = {
@@ -241,7 +242,7 @@ type SessionSet = {
 - Пока `in_progress`, в ячейке глиф `…` (не duration).  
 - Таймер: `elapsed = floor((t - startedAt)/1000) - pauseAccumulatedSeconds`, где `t = pausedAt ?? now`. Пауза/resume и kill — см. `06_workout_module.md`.  
 - После `completed`, правка `durationSeconds` не требует трогать Habit Entry.  
-- «Прошлый раз»: последняя `completed` сессия с `date < current` (или `< today`), где есть `exerciseId`, взять sets этого SessionExercise.  
+- «Прошлый раз»: последняя `completed` сессия с `date < current` (или `< today`) с ≥1 валидным set этого `exerciseId`; взять sets и `note` этого SessionExercise.  
 - «Обновить шаблон?» на finish: если `templateId` set **и** ids/порядок сессии ≠ `template.exerciseIds` → confirm → заменить на порядок `exercises[].exerciseId`.
 
 **Проекция в Habits grid для `workout_portal`:**

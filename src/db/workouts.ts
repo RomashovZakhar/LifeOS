@@ -316,6 +316,24 @@ export async function updateSessionExerciseSets(
   await putSession({ ...s, exercises });
 }
 
+export const EXERCISE_NOTE_MAX = 200;
+
+export async function updateSessionExerciseNote(
+  sessionId: string,
+  sessionExerciseId: string,
+  note: string,
+): Promise<void> {
+  const s = await getSession(sessionId);
+  if (!s) return;
+  const sliced = note.slice(0, EXERCISE_NOTE_MAX);
+  const exercises = s.exercises.map((e) =>
+    e.id === sessionExerciseId
+      ? { ...e, note: sliced.trim() ? sliced : undefined }
+      : e,
+  );
+  await putSession({ ...s, exercises });
+}
+
 export async function listActiveExercises(): Promise<Exercise[]> {
   const all = await db.exercises.toArray();
   return all
@@ -376,11 +394,18 @@ export async function archiveExercise(id: string): Promise<void> {
   });
 }
 
-/** Last completed session before `beforeDate` that includes exerciseId. */
+export type LastExercisePerformance = {
+  sets: SessionSet[];
+  note: string | null;
+};
+
+/** Last completed session before `beforeDate` with at least one filled set. */
 export async function lastCompletedSetsForExercise(
   exerciseId: string,
   beforeDate: string,
-): Promise<SessionSet[] | null> {
+): Promise<LastExercisePerformance | null> {
+  const exercise = await db.exercises.get(exerciseId);
+  const mode = exercise?.trackingMode ?? "weight_reps";
   const sessions = await db.workout_sessions
     .where("status")
     .equals("completed")
@@ -390,7 +415,9 @@ export async function lastCompletedSetsForExercise(
     .sort((a, b) => (a.date < b.date ? 1 : -1));
   for (const s of prior) {
     const se = s.exercises.find((e) => e.exerciseId === exerciseId);
-    if (se && se.sets.length > 0) return se.sets;
+    if (se?.sets.some((set) => isValidSet(mode, set))) {
+      return { sets: se.sets, note: se.note?.trim() || null };
+    }
   }
   return null;
 }
@@ -459,20 +486,32 @@ export async function syncTemplateFromSession(
 }
 
 export function setSummaryLine(mode: TrackingMode, sets: SessionSet[]): string {
-  const parts: string[] = [];
-  for (const set of sets) {
-    if (mode === "weight_reps") {
-      if (set.weightKg == null && set.reps == null) continue;
-      parts.push(`${set.weightKg ?? "—"}×${set.reps ?? "—"}`);
-    } else if (mode === "reps_only") {
-      if (set.reps == null) continue;
-      parts.push(String(set.reps));
-    } else if (set.durationSeconds) {
-      parts.push(formatSetDuration(set.durationSeconds));
-    }
+  if (sets.length === 0) return "…";
+
+  if (mode === "weight_reps") {
+    const weights = sets
+      .map((s) => s.weightKg)
+      .filter((w): w is number => w != null);
+    if (weights.length === 0) return "…";
+    const avg = weights.reduce((sum, w) => sum + w, 0) / weights.length;
+    return `${sets.length} × ${avg.toFixed(1)}`;
   }
-  if (parts.length === 0) return "…";
-  return `${sets.length}× ${parts[0]}${parts.length > 1 ? "…" : ""}`;
+
+  if (mode === "reps_only") {
+    const reps = sets.map((s) => s.reps).filter((r): r is number => r != null);
+    if (reps.length === 0) return "…";
+    const avg = Math.round(reps.reduce((sum, r) => sum + r, 0) / reps.length);
+    return `${sets.length} × ${avg}`;
+  }
+
+  const durations = sets
+    .map((s) => s.durationSeconds)
+    .filter((d): d is number => d != null && d > 0);
+  if (durations.length === 0) return "…";
+  const avgSec = Math.round(
+    durations.reduce((sum, d) => sum + d, 0) / durations.length,
+  );
+  return `${sets.length} × ${formatSetDuration(avgSec)}`;
 }
 
 function formatSetDuration(sec: number): string {

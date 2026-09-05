@@ -23,7 +23,10 @@ import {
   monthSectionTitle,
   type DetailRange,
 } from "@/lib/detailRange";
-import { formatDurationMinSec } from "@/lib/workoutFormat";
+import {
+  formatDurationMinSec,
+  formatElapsedHms,
+} from "@/lib/workoutFormat";
 
 const props = defineProps<{
   trackerId: string;
@@ -187,7 +190,7 @@ async function onDeleteConfirm() {
 
     <section v-if="totalSeconds > 0" class="stat secondary" aria-label="Время">
       <p class="stat-label">ОБЩЕЕ ВРЕМЯ</p>
-      <p class="stat-value sm mono">{{ formatDurationMinSec(totalSeconds) }}</p>
+      <p class="stat-value sm mono">{{ formatElapsedHms(totalSeconds) }}</p>
     </section>
 
     <section class="nav" aria-label="Программы и каталог">
