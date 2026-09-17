@@ -3,10 +3,14 @@ import { computed } from 'vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
 import { entrySheetDateMeta } from '@/lib/dateMeta'
 
-const props = defineProps<{
-  date: string
-  habitName: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    date: string
+    habitName: string
+    size?: 'tall' | 'auto'
+  }>(),
+  { size: 'auto' },
+)
 
 defineEmits<{
   close: []
@@ -16,31 +20,33 @@ const meta = computed(() => entrySheetDateMeta(props.date))
 </script>
 
 <template>
-  <BottomSheet size="auto" :aria-label="habitName" @close="$emit('close')">
-    <div class="entry-head">
-      <div class="meta-block">
-        <p class="meta">{{ meta }}</p>
-        <h2 class="name">{{ habitName }}</h2>
+  <BottomSheet :size="size" :aria-label="habitName" @close="$emit('close')">
+    <div class="entry-shell" :class="{ fill: size === 'tall' }">
+      <div class="entry-head">
+        <div class="meta-block">
+          <p class="meta">{{ meta }}</p>
+          <h2 class="name">{{ habitName }}</h2>
+        </div>
+        <button
+          type="button"
+          class="close"
+          aria-label="Закрыть"
+          @click="$emit('close')"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path
+              d="M2 2L12 12M12 2L2 12"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
       </div>
-      <button
-        type="button"
-        class="close"
-        aria-label="Закрыть"
-        @click="$emit('close')"
-      >
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-          <path
-            d="M2 2L12 12M12 2L2 12"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-          />
-        </svg>
-      </button>
-    </div>
 
-    <div class="entry-body">
-      <slot />
+      <div class="entry-body">
+        <slot />
+      </div>
     </div>
 
     <template v-if="$slots.footer" #footer>
@@ -50,6 +56,13 @@ const meta = computed(() => entrySheetDateMeta(props.date))
 </template>
 
 <style scoped>
+.entry-shell.fill {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .entry-head {
   display: flex;
   align-items: flex-start;
@@ -93,5 +106,12 @@ const meta = computed(() => entrySheetDateMeta(props.date))
 
 .entry-body {
   min-height: 0;
+}
+
+.entry-shell.fill .entry-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 </style>

@@ -104,7 +104,8 @@ export async function deleteTrackerCascade(id: string): Promise<void> {
         tracker.type === "time" ||
         tracker.type === "count" ||
         tracker.type === "distance" ||
-        tracker.type === "weight"
+        tracker.type === "weight" ||
+        tracker.type === "note"
       ) {
         await db.entries.where("trackerId").equals(id).delete();
       } else if (tracker.type === "checklist") {

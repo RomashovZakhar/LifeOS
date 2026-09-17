@@ -2,6 +2,12 @@ import type { ChecklistDay, Entry, Tracker, WorkoutSession } from "@/db";
 
 const EMPTY = "·";
 
+/** First non-empty line — Today trailing preview. */
+export function firstLineOfNote(text: string): string {
+  const line = text.split(/\r?\n/).find((l) => l.trim());
+  return line?.trim() ?? "";
+}
+
 export function formatCountValue(value: number): string {
   return value.toFixed(1);
 }
@@ -64,6 +70,10 @@ export function cellTextForTracker(
     case "count":
       if (!entry || entry.value.kind !== "count") return EMPTY;
       return formatCountValue(entry.value.value);
+    case "note":
+      return entry?.value.kind === "note" && entry.value.text.trim()
+        ? "×"
+        : EMPTY;
     case "distance":
     case "weight": {
       if (

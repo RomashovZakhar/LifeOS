@@ -35,6 +35,7 @@ const TYPE_OPTIONS: { value: TrackerType; label: string }[] = [
   { value: 'weight', label: 'Вес' },
   { value: 'time', label: 'Время' },
   { value: 'count', label: 'Число' },
+  { value: 'note', label: 'Заметка' },
   { value: 'workout_portal', label: 'Тренировка' },
   { value: 'checklist', label: 'Чеклист' },
 ]
@@ -45,6 +46,7 @@ const PLACEHOLDERS: Record<TrackerType, { name: string; symbol: string }> = {
   count: { name: 'Кофе', symbol: 'КОФЕ' },
   distance: { name: 'Бег', symbol: 'БЕГ' },
   weight: { name: 'Вес', symbol: 'ВЕС' },
+  note: { name: 'Питание', symbol: 'ЕДА' },
   workout_portal: { name: 'Тренировка', symbol: 'ТРЕНИ' },
   checklist: { name: 'Ритуал', symbol: 'РИТ' },
 }

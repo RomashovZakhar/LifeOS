@@ -6,6 +6,7 @@ import DetailStatGrid from '@/components/habits/DetailStatGrid.vue'
 import DetailTrendChart from '@/components/habits/DetailTrendChart.vue'
 import HistoryHeatmap from '@/components/habits/HistoryHeatmap.vue'
 import NewTrackerSheet from '@/components/habits/NewTrackerSheet.vue'
+import NoteEntrySheet from '@/components/habits/NoteEntrySheet.vue'
 import NumericEntrySheet from '@/components/habits/NumericEntrySheet.vue'
 import TimeEntrySheet from '@/components/habits/TimeEntrySheet.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
@@ -289,7 +290,7 @@ const entryType = computed(() => entryTarget.value?.tracker.type)
               </span>
               <span class="row-date">{{ row.label }}</span>
               <span
-                v-if="tracker.type !== 'completion'"
+                v-if="tracker.type !== 'completion' && tracker.type !== 'note'"
                 class="row-value mono"
               >{{ row.value }}</span>
             </button>
@@ -332,6 +333,13 @@ const entryType = computed(() => entryTarget.value?.tracker.type)
   />
   <TimeEntrySheet
     v-else-if="entryTarget && entryType === 'time'"
+    :tracker="entryTarget.tracker"
+    :date="entryTarget.date"
+    @close="closeEntry"
+    @saved="closeEntry"
+  />
+  <NoteEntrySheet
+    v-else-if="entryTarget && entryType === 'note'"
     :tracker="entryTarget.tracker"
     :date="entryTarget.date"
     @close="closeEntry"

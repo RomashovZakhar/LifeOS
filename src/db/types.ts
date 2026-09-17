@@ -8,6 +8,7 @@ export type TrackerType =
   | 'count'
   | 'distance'
   | 'weight'
+  | 'note'
   | 'workout_portal'
   | 'checklist'
 
@@ -17,6 +18,7 @@ export type EntryValue =
   | { kind: 'count'; value: number }
   | { kind: 'distance'; value: number }
   | { kind: 'weight'; value: number }
+  | { kind: 'note'; text: string }
 
 export type TrackingMode = 'weight_reps' | 'reps_only' | 'duration'
 

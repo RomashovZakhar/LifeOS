@@ -1,6 +1,12 @@
 import { db } from './database'
 import type { Entry, EntryValue } from './types'
 
+export const NOTE_TEXT_MAX = 2000
+
+export function normalizeNoteText(raw: string): string {
+  return raw.trim().slice(0, NOTE_TEXT_MAX)
+}
+
 export async function getEntry(
   trackerId: string,
   date: string,

@@ -9,7 +9,7 @@ import {
   formatWeekdayFullRu,
   isFutureDate,
 } from "@/lib/calendar";
-import { cellTextForTracker } from "@/lib/cellDisplay";
+import { cellTextForTracker, firstLineOfNote } from "@/lib/cellDisplay";
 
 const props = defineProps<{
   date: string;
@@ -58,6 +58,11 @@ function entryFor(t: Tracker) {
 
 function trailing(t: Tracker): string {
   if (t.type === "completion" || t.type === "workout_portal") return "";
+  if (t.type === "note") {
+    const e = entryFor(t);
+    if (!e || e.value.kind !== "note") return "";
+    return firstLineOfNote(e.value.text);
+  }
   const text = cellTextForTracker(
     t,
     props.date,
@@ -273,7 +278,11 @@ function onRowTap(t: Tracker) {
 }
 
 .trail {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 0.9375rem;
   color: var(--color-text-secondary);
 }

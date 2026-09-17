@@ -6,6 +6,7 @@ const TYPE_LABEL_RU: Record<TrackerType, string> = {
   count: 'Число',
   distance: 'Дистанция',
   weight: 'Вес',
+  note: 'Заметка',
   workout_portal: 'Тренировка',
   checklist: 'Чеклист',
 }
@@ -24,6 +25,7 @@ export function isOrdinaryTrackerType(type: TrackerType): boolean {
     type === 'time' ||
     type === 'count' ||
     type === 'distance' ||
-    type === 'weight'
+    type === 'weight' ||
+    type === 'note'
   )
 }

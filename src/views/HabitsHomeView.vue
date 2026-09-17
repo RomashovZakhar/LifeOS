@@ -8,6 +8,7 @@ import CompletionEntrySheet from "@/components/habits/CompletionEntrySheet.vue";
 import MonthGrid from "@/components/habits/MonthGrid.vue";
 import MonthYearTitle from "@/components/habits/MonthYearTitle.vue";
 import NewTrackerSheet from "@/components/habits/NewTrackerSheet.vue";
+import NoteEntrySheet from "@/components/habits/NoteEntrySheet.vue";
 import NumericEntrySheet from "@/components/habits/NumericEntrySheet.vue";
 import TimeEntrySheet from "@/components/habits/TimeEntrySheet.vue";
 import TodayPanel from "@/components/habits/TodayPanel.vue";
@@ -485,6 +486,13 @@ onUnmounted(() => {
     />
     <TimeEntrySheet
       v-else-if="entryTracker && entryType === 'time'"
+      :tracker="entryTracker"
+      :date="entryDate"
+      @close="closeEntrySheet"
+      @saved="closeEntrySheet"
+    />
+    <NoteEntrySheet
+      v-else-if="entryTracker && entryType === 'note'"
       :tracker="entryTracker"
       :date="entryDate"
       @close="closeEntrySheet"
