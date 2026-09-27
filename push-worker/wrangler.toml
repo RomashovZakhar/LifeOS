@@ -1,0 +1,12 @@
+name = "lifeos-push"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+workers_dev = true
+preview_urls = false
+
+[triggers]
+crons = ["* * * * *"]
+
+[[kv_namespaces]]
+binding = "SCHEDULE"
+id = "1bc53fe084204264b3cfe6f721ffe22e"

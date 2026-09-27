@@ -1,0 +1,17 @@
+{
+  "name": "lifeos-push",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "types": "wrangler types"
+  },
+  "dependencies": {
+    "@pushforge/builder": "^2.0.5"
+  },
+  "devDependencies": {
+    "typescript": "~5.8.3",
+    "wrangler": "^4.42.0"
+  }
+}

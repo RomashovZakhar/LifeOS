@@ -33,6 +33,23 @@ export interface AppSettings {
   locale: 'ru'
   /** Rest countdown preset. Missing → 60. */
   restSeconds?: number
+  /**
+   * Local reminders. Missing → none.
+   * Does not bump schemaVersion. The device push subscription is not stored here.
+   */
+  reminders?: Reminder[]
+}
+
+/** User-written reminder. Delivery is a separate push subscription, not this record. */
+export interface Reminder {
+  id: string
+  /** Notification title. */
+  text: string
+  /** 24-hour "HH:MM" in the device timezone at sync time. */
+  time: string
+  /** JS weekday: 0 Sunday … 6 Saturday. */
+  days: number[]
+  enabled: boolean
 }
 
 export type TrackerConfig =

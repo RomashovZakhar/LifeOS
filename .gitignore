@@ -51,6 +51,8 @@ test-results/
 
 # PWA / Vite extras
 dev-dist/
+push-worker/.wrangler/
+push-worker/.dev.vars
 *.pem
 
 # Misc

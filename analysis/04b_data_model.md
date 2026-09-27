@@ -61,6 +61,7 @@
 | `lastViewedMonth` | `YYYY-MM` | Restore UI |
 | `lastSelectedDate` | `YYYY-MM-DD` | Restore UI |
 | `locale` | `'ru'` | Зафиксировано V1 |
+| `reminders` | `Reminder[]`? | Опционально, версию схемы не поднимает. Нет поля = нет напоминаний. Текст, время `HH:MM`, дни `0..6` (вс..сб). Подписка Web Push в settings и в экспорт не входит |
 
 ### 4.2 `trackers`
 

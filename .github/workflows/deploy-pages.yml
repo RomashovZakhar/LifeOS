@@ -27,6 +27,9 @@ jobs:
       - run: npm run build
         env:
           GITHUB_PAGES: 'true'
+          VITE_PUSH_ENDPOINT: ${{ secrets.VITE_PUSH_ENDPOINT }}
+          VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
+          VITE_PUSH_TOKEN: ${{ secrets.VITE_PUSH_TOKEN }}
       # SPA fallback for /settings etc. under project Pages
       - run: cp dist/index.html dist/404.html
       - uses: actions/upload-pages-artifact@v3

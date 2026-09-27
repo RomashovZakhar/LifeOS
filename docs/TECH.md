@@ -35,9 +35,14 @@
 
 См. `PRODUCT.md`: cold start ощущается < 1s; типичные действия быстрые; большинство путей ≤ 3 тапа.
 
+## Напоминания
+
+Пункт в настройках. Текст и расписание живут на устройстве (`settings.reminders`). Когда приложение закрыто, доставка идёт через Cloudflare Worker и Web Push: на сервере только копия расписания и подписка этого телефона. GitHub Pages сам уведомления не отправляет. Подписка в экспорт не входит.
+
+На iPhone уведомление приходит, если LifeOS открыт с иконки на экране «Домой», разрешение выдано, и в эту минуту есть сеть.
+
 ## Out of scope for V1 engineering
 
-- Backend / auth / multi-user
-- Push notifications
+- Backend / auth / multi-user для данных жизни
 - iCloud / cloud backup
 - App Store native wrapper (если не запрошено отдельно)

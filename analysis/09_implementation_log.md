@@ -71,7 +71,7 @@ GitHub Pages (`/LifeOS/`): workflow `.github/workflows/deploy-pages.yml`. URL п
 - Сетка: selected day скроллится к середине видимой зоны.
 - Workout IA (2026-07-21): Symbol/detail = Программы + Каталог + rename/delete колонки; день без ⋯; A0 primary «ВЫБРАТЬ ПРОГРАММУ»; C без add exercise; UI «шаблон»→«программа».
 
-V1 queue закрыта (08). Вне V1: sync, push, Notes, W6, system theme follow, import merge.
+V1 queue закрыта (08). Вне V1: sync, Notes, W6, system theme follow, import merge. Напоминания — отдельный пост-V1 пункт ниже.
 
 ### Import (2026-07-27)
 
@@ -95,3 +95,9 @@ PWA reload / первый mount home: месяц=сегодня, selected=сег
 ### Cold start → Today (2026-08-03)
 
 PWA full load = СЕГОДНЯ + open H2 + scroll to today. Warm resume (no reload) keeps in-memory state. Skip forcing Today if `settings`/`detail`/`workout`/`new` query present.
+
+---
+
+## Post-V1 — напоминания (2026-09-27)
+
+Настройки → Уведомления: текст, время, дни. Расписание в `settings.reminders`. Доставка закрытого приложения — Cloudflare Worker `push-worker/` (Web Push). Подписка телефона только в localStorage, не в экспорте.

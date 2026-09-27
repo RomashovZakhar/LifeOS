@@ -259,11 +259,11 @@ function openSessionFromHistory(id: string) {
   void router.push({ path: "/", query: q });
 }
 
-type SettingsPanel = "root" | "appearance" | "trackers";
+type SettingsPanel = "root" | "appearance" | "trackers" | "notifications";
 
 const settingsPanel = computed((): SettingsPanel | null => {
   const v = route.query.settings;
-  if (v === "appearance" || v === "trackers") return v;
+  if (v === "appearance" || v === "trackers" || v === "notifications") return v;
   if (v != null && v !== "") return "root";
   return null;
 });

@@ -72,6 +72,10 @@ const router = createRouter({
       path: '/settings/appearance',
       redirect: { path: '/', query: { settings: 'appearance' } },
     },
+    {
+      path: '/settings/notifications',
+      redirect: { path: '/', query: { settings: 'notifications' } },
+    },
   ],
 })
 

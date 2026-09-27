@@ -2,6 +2,7 @@
 import { markRaw, ref, shallowRef } from "vue";
 import ConfirmDeleteSheet from "@/components/habits/ConfirmDeleteSheet.vue";
 import AppearanceSheet from "@/components/settings/AppearanceSheet.vue";
+import NotificationsSheet from "@/components/settings/NotificationsSheet.vue";
 import TrackersOrderSheet from "@/components/settings/TrackersOrderSheet.vue";
 import BottomSheet from "@/components/ui/BottomSheet.vue";
 import {
@@ -11,15 +12,16 @@ import {
   replaceFromExport,
   type LifeOsExport,
 } from "@/db";
+import { syncStoredReminders } from "@/lib/pushClient";
 
 defineProps<{
   /** Nested panel: root list, or child sheet open. */
-  panel: "root" | "appearance" | "trackers";
+  panel: "root" | "appearance" | "trackers" | "notifications";
 }>();
 
 const emit = defineEmits<{
   close: [];
-  navigate: [panel: "root" | "appearance" | "trackers"];
+  navigate: [panel: "root" | "appearance" | "trackers" | "notifications"];
 }>();
 
 const toast = ref<string | null>(null);
@@ -64,6 +66,7 @@ async function onImportConfirm() {
   importing.value = true;
   try {
     await replaceFromExport(doc);
+    await syncStoredReminders().catch(() => {});
     flash("Данные импортированы");
   } catch {
     flash("Не удалось импортировать");
@@ -100,6 +103,14 @@ function flash(msg: string) {
         <span>Оформление</span>
         <span class="chev" aria-hidden="true">›</span>
       </button>
+      <button
+        type="button"
+        class="page-row between"
+        @click="emit('navigate', 'notifications')"
+      >
+        <span>Уведомления</span>
+        <span class="chev" aria-hidden="true">›</span>
+      </button>
     </section>
 
     <section class="page-group block">
@@ -133,6 +144,10 @@ function flash(msg: string) {
   />
   <TrackersOrderSheet
     v-if="panel === 'trackers'"
+    @close="emit('navigate', 'root')"
+  />
+  <NotificationsSheet
+    v-if="panel === 'notifications'"
     @close="emit('navigate', 'root')"
   />
 
