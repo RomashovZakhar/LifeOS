@@ -1,19 +1,28 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import BottomSheet from "@/components/ui/BottomSheet.vue";
 import { formatDurationMinSec } from "@/lib/workoutFormat";
 
-const props = defineProps<{
-  durationSeconds: number;
-}>();
+const props = withDefaults(
+  defineProps<{
+    durationSeconds: number;
+    title?: string;
+    maxMinutes?: number;
+  }>(),
+  {
+    title: "Время подхода",
+    maxMinutes: 180,
+  },
+);
 
 const emit = defineEmits<{
   close: [];
   save: [seconds: number];
 }>();
 
-const MAX_MIN = 180;
-const minutes = Array.from({ length: MAX_MIN + 1 }, (_, i) => i);
+const minutes = computed(() =>
+  Array.from({ length: props.maxMinutes + 1 }, (_, i) => i),
+);
 const seconds = Array.from({ length: 60 }, (_, i) => i);
 
 const minute = ref(0);
@@ -24,7 +33,7 @@ const ITEM = 40;
 
 function applyFromProps(total: number) {
   const sec = Math.max(0, Math.floor(total));
-  minute.value = Math.min(MAX_MIN, Math.floor(sec / 60));
+  minute.value = Math.min(props.maxMinutes, Math.floor(sec / 60));
   second.value = sec % 60;
 }
 
@@ -48,7 +57,7 @@ function scrollToValue(el: HTMLElement | null, value: number) {
 function onMinuteScroll() {
   if (!minuteList.value) return;
   minute.value = Math.min(
-    MAX_MIN,
+    props.maxMinutes,
     Math.max(0, Math.round(minuteList.value.scrollTop / ITEM)),
   );
 }
@@ -74,7 +83,7 @@ function onSave() {
 <template>
   <BottomSheet
     size="auto"
-    title="Время подхода"
+    :title="title"
     :layer="70"
     @close="emit('close')"
   >

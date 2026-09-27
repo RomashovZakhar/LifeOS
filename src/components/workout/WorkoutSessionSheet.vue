@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import Sortable from "sortablejs";
-import { computed, inject, nextTick, onUnmounted, ref, watch } from "vue";
+import { computed, inject, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import ConfirmDeleteSheet from "@/components/habits/ConfirmDeleteSheet.vue";
 import DurationEditSheet from "@/components/workout/DurationEditSheet.vue";
+import SetDurationWheelSheet from "@/components/workout/SetDurationWheelSheet.vue";
 import WorkoutAddExerciseSheet from "@/components/workout/WorkoutAddExerciseSheet.vue";
 import WorkoutExerciseSheet from "@/components/workout/WorkoutExerciseSheet.vue";
 import WorkoutTemplatesSheet from "@/components/workout/WorkoutTemplatesSheet.vue";
@@ -17,6 +18,7 @@ import {
   finishSession,
   finishSessionWithDuration,
   getPortalTracker,
+  getRestSeconds,
   listTemplates,
   pauseSession,
   reorderSessionExercises,
@@ -24,6 +26,7 @@ import {
   sessionDiffersFromTemplate,
   sessionHasValidFinish,
   setSummaryLine,
+  setRestSeconds,
   startEmptySession,
   syncTemplateFromSession,
   todayDate,
@@ -138,6 +141,70 @@ const orderedExercises = computed(() => {
 
 const showDeleteSession = ref(false);
 const showDuration = ref(false);
+const showRestWheel = ref(false);
+const restPreset = ref(60);
+const restEndsAt = ref<number | null>(null);
+const restNow = ref(Date.now());
+let restTimer: number | undefined;
+
+const restRunning = computed(() => restEndsAt.value != null);
+
+const restRemaining = computed(() => {
+  const ends = restEndsAt.value;
+  if (ends == null) return 0;
+  return Math.max(0, Math.ceil((ends - restNow.value) / 1000));
+});
+
+function clearRestTimer() {
+  window.clearInterval(restTimer);
+  restTimer = undefined;
+}
+
+function pulseRestDone() {
+  navigator.vibrate?.(80);
+}
+
+function checkRest() {
+  const ends = restEndsAt.value;
+  if (ends == null) return;
+  const now = Date.now();
+  if (now >= ends) {
+    restEndsAt.value = null;
+    clearRestTimer();
+    pulseRestDone();
+    return;
+  }
+  restNow.value = now;
+}
+
+function armRestTimer() {
+  clearRestTimer();
+  restTimer = window.setInterval(checkRest, 200);
+}
+
+function startRest() {
+  if (restEndsAt.value != null || restPreset.value < 1) return;
+  restEndsAt.value = Date.now() + restPreset.value * 1000;
+  restNow.value = Date.now();
+  armRestTimer();
+}
+
+function stopRest() {
+  restEndsAt.value = null;
+  clearRestTimer();
+}
+
+function onRestVisibility() {
+  if (document.visibilityState === "visible") checkRest();
+}
+
+async function onSaveRest(seconds: number) {
+  showRestWheel.value = false;
+  const next = Math.floor(seconds);
+  if (next < 1 || next > 15 * 60) return;
+  restPreset.value = next;
+  await setRestSeconds(next);
+}
 const showUpdateTemplate = ref(false);
 const showAdd = ref(false);
 const exerciseId = ref<string | null>(null);
@@ -315,8 +382,21 @@ watch(
   { immediate: true },
 );
 
+watch(state, (s) => {
+  if (s !== "B") stopRest();
+});
+
+onMounted(() => {
+  document.addEventListener("visibilitychange", onRestVisibility);
+  void getRestSeconds().then((n) => {
+    restPreset.value = n;
+  });
+});
+
 onUnmounted(() => {
   window.clearInterval(tickTimer);
+  document.removeEventListener("visibilitychange", onRestVisibility);
+  stopRest();
   dismissLock?.unlock();
   destroySortable();
   window.clearTimeout(toastTimer);
@@ -355,6 +435,21 @@ onUnmounted(() => {
             {{ session?.pausedAt ? "Продолжить" : "Пауза" }}
           </button>
           <span v-if="session?.pausedAt" class="pause-cap">на паузе</span>
+          <button type="button" class="pause" @click="restRunning ? stopRest() : startRest()">
+            {{ restRunning ? "Завершить отдых" : "Отдых" }}
+          </button>
+          <button
+            v-if="!restRunning"
+            type="button"
+            class="rest-preset mono"
+            aria-label="Время отдыха"
+            @click="showRestWheel = true"
+          >
+            {{ formatDurationMinSec(restPreset) }}
+          </button>
+          <span v-else class="rest-remaining mono">{{
+            formatDurationMinSec(restRemaining)
+          }}</span>
         </div>
       </div>
 
@@ -458,6 +553,15 @@ onUnmounted(() => {
     @save="onSaveDuration"
   />
 
+  <SetDurationWheelSheet
+    v-if="showRestWheel"
+    title="Отдых"
+    :max-minutes="15"
+    :duration-seconds="restPreset"
+    @close="showRestWheel = false"
+    @save="onSaveRest"
+  />
+
   <BottomSheet
     v-if="showUpdateTemplate"
     size="auto"
@@ -548,6 +652,7 @@ onUnmounted(() => {
 .timer-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   margin-top: 12px;
 }
@@ -560,6 +665,21 @@ onUnmounted(() => {
   color: var(--color-text-primary);
   font-size: 0.9375rem;
   font-weight: 600;
+}
+
+.rest-preset {
+  margin: 0;
+  padding: 8px 0;
+  background: transparent;
+  font-size: var(--type-helper);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.rest-remaining {
+  font-size: var(--type-helper);
+  font-weight: 500;
+  color: var(--color-text-secondary);
 }
 
 .pause-cap,

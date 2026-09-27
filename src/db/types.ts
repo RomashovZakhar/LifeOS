@@ -31,6 +31,8 @@ export interface AppSettings {
   lastViewedMonth: string // YYYY-MM
   lastSelectedDate: string // YYYY-MM-DD
   locale: 'ru'
+  /** Rest countdown preset. Missing → 60. */
+  restSeconds?: number
 }
 
 export type TrackerConfig =

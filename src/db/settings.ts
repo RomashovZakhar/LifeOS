@@ -18,6 +18,28 @@ export async function ensureSettings(): Promise<AppSettings> {
   return created
 }
 
+export const DEFAULT_REST_SECONDS = 60
+export const MAX_REST_SECONDS = 15 * 60
+
+export function normalizeRestSeconds(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return DEFAULT_REST_SECONDS
+  const n = Math.floor(value)
+  if (n < 1 || n > MAX_REST_SECONDS) return DEFAULT_REST_SECONDS
+  return n
+}
+
+export async function getRestSeconds(): Promise<number> {
+  const s = await ensureSettings()
+  return normalizeRestSeconds(s.restSeconds)
+}
+
+export async function setRestSeconds(seconds: number): Promise<void> {
+  const n = Math.floor(seconds)
+  if (n < 1 || n > MAX_REST_SECONDS) return
+  await ensureSettings()
+  await db.settings.update('app', { restSeconds: n })
+}
+
 export async function setTheme(theme: Theme): Promise<void> {
   await ensureSettings()
   await db.settings.update('app', { theme })
