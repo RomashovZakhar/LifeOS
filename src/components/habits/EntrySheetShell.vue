@@ -59,7 +59,7 @@ const meta = computed(() => entrySheetDateMeta(props.date))
 .entry-shell.fill {
   display: flex;
   flex-direction: column;
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-height: 0;
 }
 
@@ -109,7 +109,7 @@ const meta = computed(() => entrySheetDateMeta(props.date))
 }
 
 .entry-shell.fill .entry-body {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-height: 0;
   display: flex;
   flex-direction: column;

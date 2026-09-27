@@ -337,6 +337,11 @@ const layer = toRef(props, "layer");
   -webkit-overflow-scrolling: touch;
 }
 
+.panel.tall .body {
+  display: flex;
+  flex-direction: column;
+}
+
 .panel.auto .body {
   flex: 0 1 auto;
   overflow: visible;

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref } from "vue";
+import ConfirmDeleteSheet from "@/components/habits/ConfirmDeleteSheet.vue";
 import EntrySheetShell from "@/components/habits/EntrySheetShell.vue";
 import {
   deleteEntryById,
@@ -9,6 +10,8 @@ import {
   upsertEntry,
   type Tracker,
 } from "@/db";
+
+const PERSIST_MS = 400;
 
 const props = defineProps<{
   tracker: Tracker;
@@ -22,37 +25,95 @@ const emit = defineEmits<{
 
 const text = ref("");
 const entryId = ref<string | null>(null);
+/** Normalized text last written (or loaded). Equal means no write. */
+const savedText = ref("");
 const field = ref<HTMLTextAreaElement | null>(null);
+const showDelete = ref(false);
 const isEdit = computed(() => entryId.value != null);
-const canSave = computed(() => normalizeNoteText(text.value).length > 0);
+
+let timer: number | undefined;
+let chain: Promise<void> = Promise.resolve();
+/** Explicit delete: do not write the field again on close or unmount. */
+let suppress = false;
+let closing = false;
 
 onMounted(async () => {
   const e = await getEntry(props.tracker.id, props.date);
   if (e?.value.kind === "note") {
-    text.value = e.value.text;
     entryId.value = e.id;
+    savedText.value = normalizeNoteText(e.value.text);
+    if (!text.value) text.value = e.value.text;
   }
   await nextTick();
   field.value?.focus();
 });
 
-function onInput(value: string) {
-  text.value = value.slice(0, NOTE_TEXT_MAX);
+onUnmounted(() => {
+  window.clearTimeout(timer);
+  if (!suppress && !closing) void persist();
+});
+
+function schedule() {
+  window.clearTimeout(timer);
+  timer = window.setTimeout(() => {
+    void persist();
+  }, PERSIST_MS);
 }
 
-async function onSave() {
-  const next = normalizeNoteText(text.value);
-  if (!next) return;
-  await upsertEntry(props.tracker.id, props.date, {
-    kind: "note",
-    text: next,
-  });
-  emit("saved");
-  emit("close");
+function onInput(value: string) {
+  text.value = value.slice(0, NOTE_TEXT_MAX);
+  schedule();
+}
+
+async function persist() {
+  window.clearTimeout(timer);
+  timer = undefined;
+  const run = async () => {
+    while (!suppress) {
+      const next = normalizeNoteText(text.value);
+      if (next === savedText.value) return;
+      if (!next) {
+        if (entryId.value) await deleteEntryById(entryId.value);
+        if (suppress) return;
+        entryId.value = null;
+        savedText.value = "";
+        continue;
+      }
+      const entry = await upsertEntry(props.tracker.id, props.date, {
+        kind: "note",
+        text: next,
+      });
+      entryId.value = entry.id;
+      savedText.value = next;
+    }
+  };
+  chain = chain.then(run, run);
+  await chain;
+}
+
+async function onClose() {
+  if (closing) return;
+  closing = true;
+  try {
+    await persist();
+  } finally {
+    emit("close");
+  }
 }
 
 async function onDelete() {
-  if (entryId.value) await deleteEntryById(entryId.value);
+  if (closing) return;
+  closing = true;
+  suppress = true;
+  window.clearTimeout(timer);
+  const run = async () => {
+    if (entryId.value) await deleteEntryById(entryId.value);
+    entryId.value = null;
+    savedText.value = "";
+    text.value = "";
+  };
+  chain = chain.then(run, run);
+  await chain;
   emit("saved");
   emit("close");
 }
@@ -63,7 +124,7 @@ async function onDelete() {
     :date="date"
     :habit-name="tracker.name"
     size="tall"
-    @close="emit('close')"
+    @close="onClose"
   >
     <textarea
       ref="field"
@@ -79,44 +140,30 @@ async function onDelete() {
       @input="onInput(($event.target as HTMLTextAreaElement).value)"
     />
 
-    <template #footer>
-      <div class="actions">
-        <button
-          v-if="isEdit"
-          type="button"
-          class="trash"
-          aria-label="Удалить запись"
-          @click="onDelete"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M5 7H19M10 7V5H14V7M9 7V19H15V7"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </button>
-        <button
-          type="button"
-          class="primary"
-          :disabled="!canSave"
-          @click="onSave"
-        >
-          {{ isEdit ? "ОБНОВИТЬ" : "ОТСЛЕДИТЬ" }}
-        </button>
-      </div>
+    <template v-if="isEdit" #footer>
+      <button type="button" class="delete" @click="showDelete = true">
+        УДАЛИТЬ ЗАПИСЬ
+      </button>
     </template>
   </EntrySheetShell>
+
+  <ConfirmDeleteSheet
+    v-if="showDelete"
+    title="Удалить запись?"
+    body="Текст за этот день будет удалён. Это нельзя отменить."
+    confirm-label="УДАЛИТЬ"
+    @close="showDelete = false"
+    @confirm="onDelete"
+  />
 </template>
 
 <style scoped>
 .note-input {
   display: block;
   width: 100%;
-  min-height: 240px;
-  height: calc(90dvh - 240px);
+  flex: 1 1 0;
+  height: 100%;
+  min-height: 0;
   overflow-y: auto;
   resize: none;
   border: 0;
@@ -142,40 +189,19 @@ async function onDelete() {
     color-mix(in srgb, var(--color-text-secondary) 35%, transparent);
 }
 
-.actions {
-  display: flex;
-  gap: 10px;
-}
-
-.primary {
-  flex: 1;
+.delete {
+  width: 100%;
   height: 52px;
   border-radius: var(--radius-md);
-  background: var(--color-cta-bg);
-  color: var(--color-cta-fg);
+  background: var(--color-danger-solid);
+  color: #fff;
   font-family: var(--font-mono);
   font-size: var(--type-cta);
   font-weight: 500;
   letter-spacing: 0.04em;
 }
 
-.primary:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.primary:not(:disabled):active {
+.delete:active {
   opacity: 0.88;
-}
-
-.trash {
-  flex: 0 0 52px;
-  width: 52px;
-  height: 52px;
-  display: grid;
-  place-items: center;
-  border-radius: var(--radius-md);
-  background: var(--color-danger-bg);
-  color: var(--color-danger-fg);
 }
 </style>
