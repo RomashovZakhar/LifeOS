@@ -16,7 +16,7 @@ const props = defineProps<{
   todayDate: string;
   trackers: Tracker[];
   entryMap: Map<string, Entry>;
-  sessionByDate: Map<string, WorkoutSession>;
+  sessionsByDate: Map<string, WorkoutSession[]>;
   checklistMap: Map<string, ChecklistDay>;
 }>();
 
@@ -67,7 +67,7 @@ function trailing(t: Tracker): string {
     t,
     props.date,
     entryFor(t),
-    props.sessionByDate.get(props.date),
+    props.sessionsByDate.get(props.date) ?? [],
     props.checklistMap.get(`${t.id}|${props.date}`),
   );
   return text === "·" ? "" : text;

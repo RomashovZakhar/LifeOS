@@ -207,7 +207,7 @@ type ChecklistDayLine = {
 | Поле | Тип | Смысл |
 |------|-----|--------|
 | `id` | string | PK |
-| `date` | `YYYY-MM-DD` | **unique** — одна сессия на день |
+| `date` | `YYYY-MM-DD` | Календарный день. Сессий в дне может быть несколько; порядок — `startedAt` |
 | `status` | `'in_progress' \| 'completed'` | |
 | `startedAt` | string ISO | Старт секундомера |
 | `pausedAt` | string ISO \| null | null = тикает; иначе момент постановки на паузу |
@@ -239,18 +239,18 @@ type SessionSet = {
 **Инварианты write-path:**
 
 - Finish запрещён, если нет ни одного упражнения **или** нет ни одного set (строго: ≥1 exercise и ≥1 set суммарно — зафиксируем: **≥1 exercise с ≥1 set**).  
-- Пока `in_progress`, в ячейке глиф `…` (не duration).  
+- Пока есть хотя бы одна `in_progress` в этот день, в ячейке глиф `…` (не duration). Если незавершённых нет и есть `completed` — `x`.  
 - Таймер: `elapsed = floor((t - startedAt)/1000) - pauseAccumulatedSeconds`, где `t = pausedAt ?? now`. Пауза/resume и kill — см. `06_workout_module.md`.  
 - После `completed`, правка `durationSeconds` не требует трогать Habit Entry.  
-- «Прошлый раз»: последняя `completed` сессия с `date < current` (или `< today`) с ≥1 валидным set этого `exerciseId`; взять sets и `note` этого SessionExercise.  
+- «Прошлый раз»: последняя `completed` сессия с `startedAt` раньше текущей и с ≥1 валидным set этого `exerciseId`; взять sets и `note` этого SessionExercise. Та же календарная дата учитывается, если старт был раньше.  
 - «Обновить шаблон?» на finish: если `templateId` set **и** ids/порядок сессии ≠ `template.exerciseIds` → confirm → заменить на порядок `exercises[].exerciseId`.
 
 **Проекция в Habits grid для `workout_portal`:**
 
 ```text
-session = byDate(date)
-if session?.status === 'completed' → 'x'
-else if session?.status === 'in_progress' → '…'
+sessions = byDate(date)
+if any status === 'in_progress' → '…'
+else if any status === 'completed' → 'x'
 else → ·
 ```
 
@@ -354,7 +354,7 @@ workout_portal tracker ──presence── completed workout_sessions (glyph `x
 - все типы привычек без Notes;  
 - `0` vs отсутствие;  
 - portal без рассинхрона Entry/Session;  
-- одну сессию/день, шаблоны, подходы трёх режимов, прошлый раз;  
+- одну или несколько сессий в день, шаблоны, подходы трёх режимов, прошлый раз;  
 - чеклист с эволюцией пунктов и живой историей %;  
 - cascade портала;  
 - годы в IndexedDB;  

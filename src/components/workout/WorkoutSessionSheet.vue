@@ -6,7 +6,6 @@ import DurationEditSheet from "@/components/workout/DurationEditSheet.vue";
 import SetDurationWheelSheet from "@/components/workout/SetDurationWheelSheet.vue";
 import WorkoutAddExerciseSheet from "@/components/workout/WorkoutAddExerciseSheet.vue";
 import WorkoutExerciseSheet from "@/components/workout/WorkoutExerciseSheet.vue";
-import WorkoutTemplatesSheet from "@/components/workout/WorkoutTemplatesSheet.vue";
 import BottomSheet from "@/components/ui/BottomSheet.vue";
 import CloseButton from "@/components/ui/CloseButton.vue";
 import { useLiveQuery } from "@/composables/useLiveQuery";
@@ -19,28 +18,26 @@ import {
   finishSessionWithDuration,
   getPortalTracker,
   getRestSeconds,
-  listTemplates,
   pauseSession,
   reorderSessionExercises,
+  getSession,
   resumeSession,
   sessionDiffersFromTemplate,
   sessionHasValidFinish,
   setSummaryLine,
   setRestSeconds,
-  startEmptySession,
   syncTemplateFromSession,
   todayDate,
   updateSessionDuration,
   type Exercise,
   type Tracker,
   type WorkoutSession,
-  type WorkoutTemplate,
 } from "@/db";
 import { formatDateFullRu, isFutureDate } from "@/lib/calendar";
 import { formatElapsedHms, formatDurationMinSec } from "@/lib/workoutFormat";
 
 const props = defineProps<{
-  date: string;
+  sessionId: string;
 }>();
 
 const emit = defineEmits<{
@@ -50,7 +47,6 @@ const emit = defineEmits<{
 const dismissLock = inject(SHEET_DISMISS_LOCK_KEY, null);
 
 const today = todayDate();
-const isFuture = computed(() => isFutureDate(props.date, today));
 
 const portal = useLiveQuery(
   async () => (await getPortalTracker()) ?? null,
@@ -58,16 +54,17 @@ const portal = useLiveQuery(
 );
 
 const session = useLiveQuery(
-  async () =>
-    (await db.workout_sessions.where("date").equals(props.date).first()) ??
-    null,
-  null as WorkoutSession | null,
-  () => props.date,
+  async () => (await getSession(props.sessionId)) ?? null,
+  undefined as WorkoutSession | null | undefined,
+  () => props.sessionId,
+);
+
+const sessionDate = computed(() => session.value?.date ?? "");
+const isFuture = computed(() =>
+  sessionDate.value ? isFutureDate(sessionDate.value, today) : false,
 );
 
 const exercises = useLiveQuery(() => db.exercises.toArray(), [] as Exercise[]);
-
-const templates = useLiveQuery(() => listTemplates(), [] as WorkoutTemplate[]);
 
 const exerciseById = computed(() => {
   const m = new Map<string, Exercise>();
@@ -81,12 +78,9 @@ const modeById = computed(() => {
   return m;
 });
 
-const state = computed(() => {
-  if (isFuture.value && !session.value) return "A1" as const;
-  if (!session.value) return "A0" as const;
-  if (session.value.status === "in_progress") return "B" as const;
-  return "C" as const;
-});
+const state = computed(() =>
+  session.value?.status === "completed" ? ("C" as const) : ("B" as const),
+);
 
 const canFinish = computed(() => {
   const s = session.value;
@@ -128,7 +122,7 @@ const timerLabel = computed(() => {
 });
 
 const dateLabel = computed(() =>
-  props.date === today ? "Сегодня" : formatDateFullRu(props.date),
+  sessionDate.value === today ? "Сегодня" : formatDateFullRu(sessionDate.value),
 );
 
 const portalName = computed(() => portal.value?.name ?? "Тренировка");
@@ -208,7 +202,6 @@ async function onSaveRest(seconds: number) {
 const showUpdateTemplate = ref(false);
 const showAdd = ref(false);
 const exerciseId = ref<string | null>(null);
-const showSelectProgram = ref(false);
 
 const toast = ref("");
 let toastTimer: number | undefined;
@@ -219,15 +212,6 @@ function flash(msg: string) {
   toastTimer = window.setTimeout(() => {
     toast.value = "";
   }, 1800);
-}
-
-async function onStart() {
-  if (isFuture.value) return;
-  await startEmptySession(props.date);
-}
-
-function onFromProgram() {
-  showSelectProgram.value = true;
 }
 
 async function onPauseResume() {
@@ -308,6 +292,7 @@ async function onDeleteSessionConfirm() {
   showDeleteSession.value = false;
   if (!s) return;
   await deleteSession(s.id);
+  emit("close");
 }
 
 const deleteSessionTitle = computed(() =>
@@ -319,7 +304,7 @@ const deleteSessionTitle = computed(() =>
 const deleteSessionBody = computed(() =>
   state.value === "B" && !canFinish.value
     ? "Сессия будет удалена. Можно начать заново."
-    : "Сессия этого дня будет удалена.",
+    : "Эта тренировка будет удалена.",
 );
 
 const listEl = ref<HTMLElement | null>(null);
@@ -382,6 +367,11 @@ watch(
   { immediate: true },
 );
 
+watch(session, (s) => {
+  if (s === undefined) return;
+  if (s === null) emit("close");
+});
+
 watch(state, (s) => {
   if (s !== "B") stopRest();
 });
@@ -405,9 +395,10 @@ onUnmounted(() => {
 
 <template>
   <BottomSheet
+    v-if="session"
     size="tall"
     :aria-label="portalName"
-    :layer="40"
+    :layer="45"
     @close="emit('close')"
   >
     <template #header>
@@ -452,11 +443,6 @@ onUnmounted(() => {
           }}</span>
         </div>
       </div>
-
-      <p v-if="state === 'A1'" class="hint">Нельзя начать в будущем</p>
-      <p v-else-if="state === 'A0'" class="empty-day">
-        Нет тренировки в этот день
-      </p>
     </div>
 
     <section v-if="session" class="list-wrap">
@@ -493,20 +479,7 @@ onUnmounted(() => {
 
     <template #footer>
       <div class="footer">
-        <template v-if="state === 'A0'">
-          <template v-if="templates.length > 0">
-            <button type="button" class="cta" @click="onFromProgram">
-              ВЫБРАТЬ ПРОГРАММУ
-            </button>
-            <button type="button" class="link" @click="onStart">
-              Пустая тренировка
-            </button>
-          </template>
-          <button v-else type="button" class="cta" @click="onStart">
-            НАЧАТЬ ТРЕНИРОВКУ
-          </button>
-        </template>
-        <template v-else-if="state === 'B'">
+        <template v-if="state === 'B'">
           <button
             v-if="!canFinish"
             type="button"
@@ -585,23 +558,16 @@ onUnmounted(() => {
   </BottomSheet>
 
   <WorkoutExerciseSheet
-    v-if="exerciseId"
-    :date="date"
+    v-if="exerciseId && session"
+    :session-id="session.id"
     :session-exercise-id="exerciseId"
     @close="exerciseId = null"
   />
 
   <WorkoutAddExerciseSheet
-    v-if="showAdd"
-    :date="date"
+    v-if="showAdd && session"
+    :session-id="session.id"
     @close="showAdd = false"
-  />
-
-  <WorkoutTemplatesSheet
-    v-if="showSelectProgram"
-    :date="date"
-    mode="select"
-    @close="showSelectProgram = false"
   />
 </template>
 
@@ -685,16 +651,10 @@ onUnmounted(() => {
 .pause-cap,
 .hint,
 .helper,
-.empty,
-.empty-day {
+.empty {
   margin: 8px 0 0;
   font-size: var(--type-helper);
   color: var(--color-text-secondary);
-}
-
-.empty-day {
-  margin-top: 20px;
-  font-size: 0.9375rem;
 }
 
 .list-wrap {
@@ -812,16 +772,6 @@ onUnmounted(() => {
 .ghost {
   background: var(--color-surface-3);
   color: var(--color-text-primary);
-}
-
-.link {
-  background: transparent;
-  color: var(--color-text-secondary);
-  font-size: 0.9375rem;
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  padding: 4px 0;
 }
 
 .actions {

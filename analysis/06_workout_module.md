@@ -28,15 +28,15 @@
 
 ### Не входит V1
 
-Суперсеты, rest-timer как продукт, программы на недели, графики Progressive Overload, Health, соцсеть, RPE, видео, несколько сессий/день, второй portal.
+Суперсеты, программы на недели, графики Progressive Overload, Health, соцсеть, RPE, видео, второй portal.
 
 ---
 
 ## 2. Принципы
 
 1. Тот же visual language: dark/light, sheets, caps CTA, close ✕, danger delete (03/05).
-2. Одна сессия на `YYYY-MM-DD`.
-3. Сетка Habits: `in_progress` → `…`, `completed` → `x`. `durationSeconds` — в сессии / Истории.
+2. Несколько сессий на один `YYYY-MM-DD`. Вход с ячейки — список дня. Сессия открывается по `id`.
+3. Сетка Habits: есть `in_progress` → `…`, иначе есть `completed` → `x`. `durationSeconds` — в сессии / Истории.
 4. Правка сессии ≠ авто-правка шаблона; «Обновить шаблон?» только на finish **и** только если состав (ids + порядок) отличается.
 5. Finish ≥ 1 упражнение **и** ≥ 1 подход суммарно (04b).
 6. Future date — только просмотр пустого/запрет старта (как Habits).
@@ -48,17 +48,18 @@
 
 | Жест с Habits             | Открывается                                                 |
 | ------------------------- | ----------------------------------------------------------- |
-| Tap Symbol портала        | **История колонки** (stat / heatmap / список); tap дня → W1 |
-| Tap ячейки / Today portal | W1 для **этой** даты                                        |
+| Tap Symbol портала        | **История колонки** (stat / heatmap / список); tap клетки карты → список дня; tap строки → эта сессия |
+| Tap ячейки / Today portal | Список тренировок **этой** даты                                      |
 
-Route-дух: `/?workout=YYYY-MM-DD` (сессия); `/?detail=:portalId` (история).  
+Route-дух: `/?workout=YYYY-MM-DD` (список дня); `/?workout=…&session=<id>` (сессия поверх списка); `/?session=<id>` из истории, без списка. `/?detail=:portalId` (история).  
 Legacy `/workout?date=` → redirect на `/?workout=`.  
-Back/✕ / swipe / backdrop → Habits home.
+Back/✕ / swipe / backdrop со списка → Habits home. Закрытие сессии со списка возвращает к списку; из истории — к истории.
 
 **UI shell (2026-07-20):** W1–W5 — **bottom sheets** поверх home.  
-**История портала (2026-07-20):** Symbol → sheet как H7/C1 (не сессия дня).
+**История портала (2026-07-20):** Symbol → sheet как H7/C1 (не сессия дня).  
+**Несколько сессий (2026-09-27):** ячейка открывает список дня. «Новая тренировка» создаёт ещё одну сессию, не затирает день.
 
-**B «Отменить»:** если `exercises.length === 0` → secondary «Отменить» → delete session → A0.  
+**B «Отменить»:** если `exercises.length === 0` → secondary «Отменить» → delete session → список дня.  
 **C:** без «+ Упражнение» на основном экране (есть в ⋯).  
 **W2 duration sets:** ввод через wheels мин/сек (`M:SS`), не сырые секунды.  
 **W2 weight/reps:** крупные inputs без ряда ±.
@@ -96,19 +97,20 @@ primary CTA внизу — зависит от состояния
 | **B** In progress       | status=in_progress        | Timer `H:MM:SS` (tap → задать длительность + завершить) + **Пауза / Продолжить** | нет валидного подхода → **ОТМЕНИТЬ**; иначе **ЗАКОНЧИТЬ** | «+ Упражнение» |
 | **C** Completed         | status=completed          | Показана длительность (tap → edit duration sheet)                                | **УДАЛИТЬ ТРЕНИРОВКУ**                                                     | правка существующих подходов; **без** + упражнение  |
 
+A0 и A1 живут на списке дня, не на шите сессии. Шит сессии открывается только когда строка уже создана (B или C).
+
 **Колонка (Symbol → History/detail):** Программы (manage) · Каталог · ИЗМЕНИТЬ · УДАЛИТЬ колонку. Старт сессии из detail **нет**.
 
 **День:** без меню ⋯. Настройки колонки / программы / каталог — только в detail.
 
 > **UI copy (2026-07-21):** в интерфейсе «шаблон» → **«программа»** (`workout_templates` в данных без rename).
 
-**«НАЧАТЬ ТРЕНИРОВКУ» / «Пустая тренировка»:**  
+**«НОВАЯ ТРЕНИРОВКА»** на списке дня. Если программ нет — сразу пустая сессия и вход в неё. Если программы есть — **ВЫБРАТЬ ПРОГРАММУ** и ссылка «Пустая тренировка», затем вход в новую сессию. Уже существующие тренировки дня не затираются: каждая «Новая» создаёт ещё одну строку, в том числе пока предыдущая `in_progress`.
+
+**«Пустая тренировка»:**  
 создать session: `status=in_progress`, `startedAt=now`, `pausedAt=null`, `pauseAccumulatedSeconds=0`, `templateId=null`, `exercises=[]`.
 
-**«ВЫБРАТЬ ПРОГРАММУ»:** → picker W4-select → session с exercises из template…
-
-**Повторный Начать при existing in_progress:** не создавать новую — показать эту (B).  
-**Начать при existing completed:** не создавать; остаёмся в C. Отдельного «начать заново» нет без delete.
+**«ВЫБРАТЬ ПРОГРАММУ»:** → picker W4-select → новая session с exercises из template.
 
 **ЗАКОНЧИТЬ:**
 
@@ -200,7 +202,7 @@ Session в IDB; draft sheets подходов не нужны (autosave на W2)
 УДАЛИТЬ УПРАЖНЕНИЕ (danger text) — из сессии, не из каталога
 ```
 
-**Прошлый раз:** последняя `completed` session с `date < currentSession.date`, содержащая `exerciseId`; показать sets в одну/две строки compact. Если нет — «Нет данных».
+**Прошлый раз:** последняя `completed` session с `startedAt` раньше текущей сессии, содержащая `exerciseId`; показать sets в одну/две строки compact. Если нет — «Нет данных». Та же дата учитывается, если та тренировка началась раньше.
 
 **Режимы ввода set (04b):**
 
@@ -380,7 +382,7 @@ Tap существующего → append to session (если уже есть �
 ## 11. Шпаргалка
 
 ```text
-W1 day session · Start/Finish · timer with pause · one session/day
+W1 day list + session · Start/Finish · timer with pause · many sessions/day
 W2 sets by mode · last time · autosave
 Templates optional · 1 empty set/exercise · update template? on finish
 Drag reorder · ⋯ portal rename/delete · cascade sessions

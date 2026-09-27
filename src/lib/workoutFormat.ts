@@ -19,6 +19,13 @@ export function formatDurationMinSec(totalSeconds: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
+/** Local clock of a session start, `07:40`. */
+export function formatStartedClock(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
 /** Parse `M:SS` / `MM:SS` / `120:00` → seconds. */
 export function parseDurationMinSec(text: string): number | null {
   const t = text.trim()

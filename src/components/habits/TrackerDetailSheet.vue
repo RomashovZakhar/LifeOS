@@ -166,7 +166,7 @@ const historyGroups = computed((): HistoryGroup[] => {
       rows: entries.map((entry) => ({
         entry,
         label: formatHistoryDayRu(entry.date),
-        value: cellTextForTracker(t, entry.date, entry, undefined, undefined),
+        value: cellTextForTracker(t, entry.date, entry, [], undefined),
       })),
     }
   })

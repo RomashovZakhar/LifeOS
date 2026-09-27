@@ -9,7 +9,6 @@ import {
   createExercise,
   db,
   listActiveExercises,
-  startEmptySession,
   type Exercise,
   type TrackingMode,
   type WorkoutSession,
@@ -17,7 +16,7 @@ import {
 import { TRACKING_MODE_BADGE } from "@/lib/workoutFormat";
 
 const props = defineProps<{
-  date: string;
+  sessionId: string;
 }>();
 
 const emit = defineEmits<{
@@ -25,11 +24,9 @@ const emit = defineEmits<{
 }>();
 
 const session = useLiveQuery(
-  async () =>
-    (await db.workout_sessions.where("date").equals(props.date).first()) ??
-    null,
+  async () => (await db.workout_sessions.get(props.sessionId)) ?? null,
   null as WorkoutSession | null,
-  () => props.date,
+  () => props.sessionId,
 );
 
 const catalog = useLiveQuery(() => listActiveExercises(), [] as Exercise[]);
@@ -52,13 +49,9 @@ const filtered = computed(() => {
   return catalog.value.filter((e) => e.name.toLowerCase().includes(q));
 });
 
-async function ensureSession(): Promise<WorkoutSession> {
-  if (session.value) return session.value;
-  return startEmptySession(props.date);
-}
-
 async function pick(exercise: Exercise) {
-  const s = await ensureSession();
+  const s = session.value;
+  if (!s) return;
   const { already } = await appendExerciseToSession(s.id, exercise.id);
   if (already) {
     toast.value = "Уже в тренировке";

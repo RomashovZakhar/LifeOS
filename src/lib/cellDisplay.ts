@@ -57,7 +57,7 @@ export function cellTextForTracker(
   tracker: Tracker,
   _date: string,
   entry: Entry | undefined,
-  session: WorkoutSession | undefined,
+  sessions: WorkoutSession[],
   checklistDay: ChecklistDay | undefined,
 ): string {
   switch (tracker.type) {
@@ -86,8 +86,8 @@ export function cellTextForTracker(
       return `${formatMeasureValue(entry.value.value)} ${unit}`;
     }
     case "workout_portal": {
-      if (session?.status === "completed") return "x";
-      if (session?.status === "in_progress") return "…";
+      if (sessions.some((s) => s.status === "in_progress")) return "…";
+      if (sessions.some((s) => s.status === "completed")) return "x";
       return EMPTY;
     }
     case "checklist": {

@@ -15,6 +15,7 @@ import TodayPanel from "@/components/habits/TodayPanel.vue";
 import TrackerDetailSheet from "@/components/habits/TrackerDetailSheet.vue";
 import SettingsSheet from "@/components/settings/SettingsSheet.vue";
 import WorkoutHistorySheet from "@/components/workout/WorkoutHistorySheet.vue";
+import WorkoutDaySheet from "@/components/workout/WorkoutDaySheet.vue";
 import WorkoutSessionSheet from "@/components/workout/WorkoutSessionSheet.vue";
 import { useLiveQuery } from "@/composables/useLiveQuery";
 import {
@@ -108,9 +109,18 @@ const entryMap = computed(() => {
   return m;
 });
 
-const sessionByDate = computed(() => {
-  const m = new Map<string, WorkoutSession>();
-  for (const s of monthSessions.value) m.set(s.date, s);
+const sessionsByDate = computed(() => {
+  const m = new Map<string, WorkoutSession[]>();
+  for (const s of monthSessions.value) {
+    const list = m.get(s.date) ?? [];
+    list.push(s);
+    m.set(s.date, list);
+  }
+  for (const list of m.values()) {
+    list.sort((a, b) =>
+      a.startedAt < b.startedAt ? -1 : a.startedAt > b.startedAt ? 1 : 0,
+    );
+  }
   return m;
 });
 
@@ -128,7 +138,7 @@ function cellText(trackerId: string, date: string): string {
     tracker,
     date,
     entryMap.value.get(`${trackerId}|${date}`),
-    sessionByDate.value.get(date),
+    sessionsByDate.value.get(date) ?? [],
     checklistMap.value.get(`${trackerId}|${date}`),
   );
 }
@@ -204,6 +214,7 @@ function openWorkout(date: string) {
   closeToday();
   const q = { ...route.query };
   delete q.detail;
+  delete q.session;
   q.workout = date;
   void router.push({ path: "/", query: q });
 }
@@ -211,12 +222,41 @@ function openWorkout(date: string) {
 function closeWorkout() {
   const q = { ...route.query };
   delete q.workout;
+  delete q.session;
   void router.replace({ path: "/", query: q });
 }
 
 function openWorkoutFromHistory(date: string) {
-  closeDetail();
-  openWorkout(date);
+  closeToday();
+  const q = { ...route.query };
+  delete q.detail;
+  delete q.session;
+  q.workout = date;
+  void router.replace({ path: "/", query: q });
+}
+
+const sessionId = computed(() => {
+  const v = route.query.session;
+  return typeof v === "string" && v ? v : null;
+});
+
+function openSession(id: string) {
+  const q = { ...route.query };
+  q.session = id;
+  void router.push({ path: "/", query: q });
+}
+
+function closeSession() {
+  const q = { ...route.query };
+  delete q.session;
+  void router.replace({ path: "/", query: q });
+}
+
+function openSessionFromHistory(id: string) {
+  const q = { ...route.query };
+  delete q.workout;
+  q.session = id;
+  void router.push({ path: "/", query: q });
 }
 
 type SettingsPanel = "root" | "appearance" | "trackers";
@@ -407,7 +447,7 @@ onUnmounted(() => {
         :today-date="today"
         :trackers="trackers"
         :entry-map="entryMap"
-        :session-by-date="sessionByDate"
+        :sessions-by-date="sessionsByDate"
         :checklist-map="checklistMap"
         @close="closeToday"
         @toggle-completion="onToggleCompletion"
@@ -442,6 +482,7 @@ onUnmounted(() => {
       @close="closeDetail"
       @deleted="closeDetail"
       @open-day="openWorkoutFromHistory"
+      @open-session="openSessionFromHistory"
     />
     <TrackerDetailSheet
       v-else-if="detailKind === 'ordinary' && detailTrackerId"
@@ -464,10 +505,17 @@ onUnmounted(() => {
       @open-device="openDeviceFromDay"
     />
 
-    <WorkoutSessionSheet
+    <WorkoutDaySheet
       v-if="workoutDate"
       :date="workoutDate"
       @close="closeWorkout"
+      @open-session="openSession"
+    />
+
+    <WorkoutSessionSheet
+      v-if="sessionId"
+      :session-id="sessionId"
+      @close="closeSession"
     />
 
     <SettingsSheet

@@ -30,10 +30,10 @@ LifeOS
     │     tap day / Today     → log / checkbox / sheet
     │
     ├── Tracker (workout portal)  → тип WorkoutPortal  [max 1 на app]
-    │     ячейка дня          → `…` in_progress / `x` completed / иначе ·
+    │     ячейка дня          → `…` если есть in_progress / `x` если есть completed / иначе ·
     │     длительность        → на сессии / в Истории (не глиф сетки)
     │     tap Symbol          → модуль Workouts (день из выбранной строки)
-    │     tap day / Today     → НЕ Completion; вход в сессию дня / edit длительности сессии
+    │     tap day / Today     → список тренировок этого дня, не Completion
     │     значение в сетке    → ТОЛЬКО длительность (нет отдельной Habit Entry; источник = Session)
     │
     └── Tracker (checklist)   → тип Checklist  [N штук, любое Name/Symbol]
@@ -76,7 +76,7 @@ LifeOS
 | Обычная привычка — история/edit | Tap Symbol → detail |
 | Обычная привычка — запись дня | Tap Today row / (по типу) sheet или checkbox |
 | Войти в Workouts | Tap Symbol workout-портала |
-| Открыть сессию/день тренировки с сетки | Tap ячейки или Today-строки портала → сессия этого дня (не toggle Completion) |
+| Открыть день тренировки с сетки | Tap ячейки или Today-строки портала → список тренировок этого дня |
 | Устройство чеклиста | Tap Symbol checklist |
 | Отметить пункты дня | Tap ячейки / Today checklist → дневной чеклист |
 | Новый трекер | Dock `+` → New tracker (типы см. §5) |
@@ -165,14 +165,14 @@ Type после создания **immutable** (менять нельзя).
 
 | Правило | Решение |
 |---------|---------|
-| Длительность в сетке | **Нет.** `in_progress` → `…`; `completed` → `x`. `durationSeconds` — сессия / История (04b) |
+| Длительность в сетке | **Нет.** Есть `in_progress` → `…`; иначе есть `completed` → `x`. `durationSeconds` — сессия / История (04b) |
 | Ручной Completion | **Запрещён** на портале |
 | Секундомер | «Начать» → tick → «Закончить» → пишется `durationSeconds` на сессии → ячейка читает его |
 | Finish без упражнений | **Запрещён** |
 | Редактирование длительности | Правка `durationSeconds` сессии (забыли Закончить) — UI на портале/сессии |
-| Сессий на день | **Одна** |
+| Сессий на день | **Несколько.** Ячейка и Today открывают список дня. `…`, если есть незавершённая; иначе `x`, если есть завершённая |
 | Удаление портала | **Cascade сессий**; каталог упражнений и шаблоны **сохраняются** (04b) |
-| Вход | Symbol → модуль; ячейка/Today → сессия дня (не checkbox) |
+| Вход | Symbol → история; ячейка/Today → список дня; строка списка → сессия |
 
 ### 6.3 Workouts — scope V1
 
@@ -185,11 +185,11 @@ Type после создания **immutable** (менять нельзя).
 - Правка текущей сессии (add/remove упражнения, подходы) **не меняет** шаблон сама по себе.
 - На **finish**: вопрос «Обновить шаблон?» только если старт из шаблона **и** состав упражнений изменился (06).
 - Прогресс без дашбордов Health: через прошлый раз + историю в потоке упражнения.
+- Несколько сессий в один день. Ячейка открывает список; сессия открывается по `id`.
 
 **Нет в V1:**
 
 - Поля упражнения «на потом» (группы мышц, видео, инвентарь…).
-- Несколько сессий в день.
 - Соцсеть, программы на недели, суперсеты как сущность, Apple Health, геймификация.
 - UI «как Strong» ради сложности — оставляем необходимый минимум.
 
@@ -379,7 +379,6 @@ Type после создания **immutable** (менять нельзя).
 - Strong-bloat, Health, social, streaks  
 - Desktop layout  
 - Несколько WorkoutPortal  
-- Несколько сессий в день  
 - Онбординг-цитаты эталона  
 
 ---
@@ -399,8 +398,8 @@ Type после создания **immutable** (менять нельзя).
 
 ```text
 Habits grid = home
-WorkoutPortal (1) → Workouts · cell = `…`/`x` · duration on session · no Entry
+WorkoutPortal (1) → Workouts · cell = `…`/`x` · несколько сессий на день · duration on session · no Entry
 Checklist (N) → device on Symbol · day snapshot · · then %
-Templates + one session/day · finish asks update template?
+Templates + many sessions/day · finish asks update template?
 RU · Export JSON · dark/light · no future logs · type locked · cascade sessions only
 ```

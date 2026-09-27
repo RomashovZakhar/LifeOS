@@ -20,6 +20,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: [];
+  started: [sessionId: string];
 }>();
 
 const templates = useLiveQuery(() => listTemplates(), [] as WorkoutTemplate[]);
@@ -31,7 +32,8 @@ const editId = ref<string | null>(null);
 
 async function onSelect(t: WorkoutTemplate) {
   if (props.mode === "select") {
-    await startSessionFromTemplate(props.date, t.id);
+    const session = await startSessionFromTemplate(props.date, t.id);
+    emit("started", session.id);
     emit("close");
     return;
   }

@@ -23,7 +23,7 @@ import {
 } from '@/lib/workoutFormat'
 
 const props = defineProps<{
-  date: string
+  sessionId: string
   sessionExerciseId: string
 }>()
 
@@ -32,11 +32,9 @@ const emit = defineEmits<{
 }>()
 
 const session = useLiveQuery(
-  async () =>
-    (await db.workout_sessions.where('date').equals(props.date).first()) ??
-    null,
+  async () => (await db.workout_sessions.get(props.sessionId)) ?? null,
   null as WorkoutSession | null,
-  () => props.date,
+  () => props.sessionId,
 )
 
 const sessionExercise = computed(() =>
@@ -62,14 +60,15 @@ const lastSets = ref<SessionSet[] | null>(null)
 const lastNote = ref<string | null>(null)
 
 watch(
-  () => [sessionExercise.value?.exerciseId, props.date] as const,
-  async ([exerciseId]) => {
-    if (!exerciseId) {
+  () =>
+    [sessionExercise.value?.exerciseId, session.value?.startedAt] as const,
+  async ([exerciseId, startedAt]) => {
+    if (!exerciseId || !startedAt) {
       lastSets.value = null
       lastNote.value = null
       return
     }
-    const last = await lastCompletedSetsForExercise(exerciseId, props.date)
+    const last = await lastCompletedSetsForExercise(exerciseId, startedAt)
     lastSets.value = last?.sets ?? null
     lastNote.value = last?.note ?? null
   },

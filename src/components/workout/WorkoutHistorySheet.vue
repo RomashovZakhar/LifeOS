@@ -26,6 +26,7 @@ import {
 import {
   formatDurationMinSec,
   formatElapsedHms,
+  formatStartedClock,
 } from "@/lib/workoutFormat";
 
 const props = defineProps<{
@@ -36,6 +37,7 @@ const emit = defineEmits<{
   close: [];
   deleted: [];
   openDay: [date: string];
+  openSession: [sessionId: string];
 }>();
 
 const range = ref<DetailRange>("month");
@@ -81,7 +83,10 @@ const rangedSessions = computed(() => {
   const { from, to } = bounds.value;
   return allSessions.value
     .filter((s) => s.date >= from && s.date <= to)
-    .sort((a, b) => (a.date < b.date ? 1 : -1));
+    .sort((a, b) => {
+      if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+      return a.startedAt < b.startedAt ? 1 : a.startedAt > b.startedAt ? -1 : 0;
+    });
 });
 
 const workoutCount = computed(() => rangedSessions.value.length);
@@ -99,7 +104,7 @@ const filledDates = computed(() => {
 interface HistoryGroup {
   title: string;
   countLabel: string;
-  rows: { date: string; label: string; value: string }[];
+  rows: { id: string; date: string; label: string; value: string }[];
 }
 
 const historyGroups = computed((): HistoryGroup[] => {
@@ -117,8 +122,9 @@ const historyGroups = computed((): HistoryGroup[] => {
       title,
       countLabel: workoutsCountLabel(n),
       rows: sessions.map((s) => ({
+        id: s.id,
         date: s.date,
-        label: formatHistoryDayRu(s.date),
+        label: `${formatHistoryDayRu(s.date)} ${formatStartedClock(s.startedAt)}`,
         value:
           s.durationSeconds != null
             ? formatDurationMinSec(s.durationSeconds)
@@ -141,6 +147,10 @@ function workoutsCountLabel(n: number): string {
 function openDay(date: string) {
   if (date > today) return;
   emit("openDay", date);
+}
+
+function openSession(id: string) {
+  emit("openSession", id);
 }
 
 async function onDeleteConfirm() {
@@ -222,8 +232,8 @@ async function onDeleteConfirm() {
           <span class="group-count">{{ g.countLabel }}</span>
         </div>
         <ul class="rows">
-          <li v-for="row in g.rows" :key="row.date">
-            <button type="button" class="row" @click="openDay(row.date)">
+          <li v-for="row in g.rows" :key="row.id">
+            <button type="button" class="row" @click="openSession(row.id)">
               <span class="row-date">{{ row.label }}</span>
               <span class="row-value mono">{{ row.value }}</span>
             </button>
@@ -364,6 +374,7 @@ async function onDeleteConfirm() {
 }
 
 .nav {
+  flex-shrink: 0;
   margin-top: 16px;
   display: flex;
   flex-direction: column;

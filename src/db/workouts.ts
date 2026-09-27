@@ -61,10 +61,13 @@ export async function getPortalTracker() {
   return db.trackers.where("type").equals("workout_portal").first();
 }
 
-export async function getSessionByDate(
+export async function listSessionsByDate(
   date: string,
-): Promise<WorkoutSession | undefined> {
-  return db.workout_sessions.where("date").equals(date).first();
+): Promise<WorkoutSession[]> {
+  const rows = await db.workout_sessions.where("date").equals(date).toArray();
+  return rows.sort((a, b) =>
+    a.startedAt < b.startedAt ? -1 : a.startedAt > b.startedAt ? 1 : 0,
+  );
 }
 
 export async function getSession(
@@ -85,8 +88,6 @@ export async function deleteSession(id: string): Promise<void> {
 }
 
 export async function startEmptySession(date: string): Promise<WorkoutSession> {
-  const existing = await getSessionByDate(date);
-  if (existing) return existing;
   if (date > todayDate()) throw new Error("Cannot start future session");
 
   const session: WorkoutSession = {
@@ -110,8 +111,6 @@ export async function startSessionFromTemplate(
   date: string,
   templateId: string,
 ): Promise<WorkoutSession> {
-  const existing = await getSessionByDate(date);
-  if (existing) return existing;
   if (date > todayDate()) throw new Error("Cannot start future session");
 
   const template = await db.workout_templates.get(templateId);
@@ -399,10 +398,10 @@ export type LastExercisePerformance = {
   note: string | null;
 };
 
-/** Last completed session before `beforeDate` with at least one filled set. */
+/** Last completed session that started before `beforeStartedAt`, with a filled set. */
 export async function lastCompletedSetsForExercise(
   exerciseId: string,
-  beforeDate: string,
+  beforeStartedAt: string,
 ): Promise<LastExercisePerformance | null> {
   const exercise = await db.exercises.get(exerciseId);
   const mode = exercise?.trackingMode ?? "weight_reps";
@@ -411,8 +410,8 @@ export async function lastCompletedSetsForExercise(
     .equals("completed")
     .toArray();
   const prior = sessions
-    .filter((s) => s.date < beforeDate)
-    .sort((a, b) => (a.date < b.date ? 1 : -1));
+    .filter((s) => s.startedAt < beforeStartedAt)
+    .sort((a, b) => (a.startedAt < b.startedAt ? 1 : -1));
   for (const s of prior) {
     const se = s.exercises.find((e) => e.exerciseId === exerciseId);
     if (se?.sets.some((set) => isValidSet(mode, set))) {
