@@ -442,7 +442,10 @@ watch(sessionExercise, (se) => {
   flex: 0 0 32px;
   width: 32px;
   height: 32px;
-  margin: 6px 0 0;
+  margin: 1px 8px 0;
+  background-color: var(--color-surface-3);
+  padding: 4px;
+  border-radius: 12px;
   display: grid;
   place-items: center;
   color: var(--color-text-secondary);
@@ -513,7 +516,9 @@ watch(sessionExercise, (se) => {
   resize: none;
   overflow: auto;
   border: none;
-  background: transparent;
+  background: var(--color-surface-3);
+  border-radius: 14px;
+  padding: 14px 16px;
   color: var(--color-text-primary);
   font-family: var(--font-sans);
   font-size: 0.9375rem;
@@ -530,6 +535,9 @@ watch(sessionExercise, (se) => {
   align-items: baseline;
   gap: 8px 12px;
   margin: 0;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--color-surface-3);
 }
 
 .last-label {
