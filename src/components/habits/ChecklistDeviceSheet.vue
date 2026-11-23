@@ -4,6 +4,7 @@ import { computed, inject, onUnmounted, ref, watch } from 'vue'
 import ChecklistDaySheet from '@/components/habits/ChecklistDaySheet.vue'
 import ConfirmDeleteSheet from '@/components/habits/ConfirmDeleteSheet.vue'
 import HistoryHeatmap from '@/components/habits/HistoryHeatmap.vue'
+import GripIcon from '@/components/ui/GripIcon.vue'
 import NewTrackerSheet from '@/components/habits/NewTrackerSheet.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
 import ChipSelect from '@/components/ui/ChipSelect.vue'
@@ -333,7 +334,7 @@ onUnmounted(() => {
           :data-id="item.id"
         >
           <button type="button" class="handle" aria-label="Перетащить">
-            ≡
+            <GripIcon />
           </button>
           <button type="button" class="item-title" @click="openRename(item)">
             {{ item.title }}

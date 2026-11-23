@@ -2,6 +2,7 @@
 import Sortable from 'sortablejs'
 import { inject, nextTick, onUnmounted, ref, watch } from 'vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
+import GripIcon from '@/components/ui/GripIcon.vue'
 import { useLiveQuery } from '@/composables/useLiveQuery'
 import { SHEET_DISMISS_LOCK_KEY } from '@/composables/sheetDismissLock'
 import { db, reorderTrackers, type Tracker } from '@/db'
@@ -107,12 +108,10 @@ onUnmounted(() => {
     :layer="50"
     @close="$emit('close')"
   >
-    <p class="hint">Перетащи ≡ — порядок колонок в сетке слева направо.</p>
-
     <ul v-if="local.length" ref="listEl" class="list">
       <li v-for="t in local" :key="t.id" class="row" :data-id="t.id">
         <button type="button" class="handle" aria-label="Перетащить">
-          ≡
+          <GripIcon />
         </button>
         <div class="meta">
           <span class="name">{{ t.name }}</span>
@@ -127,12 +126,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.hint {
-  margin: 0 0 12px;
-  font-size: var(--type-helper);
-  color: var(--color-text-secondary);
-}
-
 .empty {
   margin: 24px 0 0;
   color: var(--color-text-secondary);
@@ -158,15 +151,19 @@ onUnmounted(() => {
 }
 
 .handle {
-  flex: 0 0 36px;
-  width: 36px;
-  height: 36px;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
-  border-radius: 10px;
+  border-radius: 8px;
   color: var(--color-text-secondary);
-  font-size: 1.1rem;
   touch-action: none;
+}
+
+.handle :deep(.grip) {
+  width: 8px;
+  height: 12px;
 }
 
 .meta {

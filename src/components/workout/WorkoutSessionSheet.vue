@@ -8,6 +8,7 @@ import WorkoutAddExerciseSheet from "@/components/workout/WorkoutAddExerciseShee
 import WorkoutExerciseSheet from "@/components/workout/WorkoutExerciseSheet.vue";
 import BottomSheet from "@/components/ui/BottomSheet.vue";
 import CloseButton from "@/components/ui/CloseButton.vue";
+import GripIcon from "@/components/ui/GripIcon.vue";
 import { useLiveQuery } from "@/composables/useLiveQuery";
 import { SHEET_DISMISS_LOCK_KEY } from "@/composables/sheetDismissLock";
 import {
@@ -19,6 +20,7 @@ import {
   finishSessionWithDuration,
   getPortalTracker,
   getRestSeconds,
+  listTemplates,
   pauseSession,
   reorderSessionExercises,
   getSession,
@@ -34,6 +36,7 @@ import {
   type Exercise,
   type Tracker,
   type WorkoutSession,
+  type WorkoutTemplate,
 } from "@/db";
 import { formatDateFullRu, isFutureDate } from "@/lib/calendar";
 import { formatElapsedHms, formatDurationMinSec } from "@/lib/workoutFormat";
@@ -127,7 +130,16 @@ const dateLabel = computed(() =>
   sessionDate.value === today ? "Сегодня" : formatDateFullRu(sessionDate.value),
 );
 
-const portalName = computed(() => portal.value?.name ?? "Тренировка");
+const templates = useLiveQuery(
+  () => listTemplates(),
+  [] as WorkoutTemplate[],
+);
+
+const sessionTitle = computed(() => {
+  const id = session.value?.templateId;
+  if (!id) return "Свободная тренировка";
+  return templates.value.find((t) => t.id === id)?.name ?? "Свободная тренировка";
+});
 
 const orderedExercises = computed(() => {
   const s = session.value;
@@ -427,7 +439,7 @@ onUnmounted(() => {
   <BottomSheet
     v-if="session"
     size="tall"
-    :aria-label="portalName"
+    :aria-label="sessionTitle"
     :layer="45"
     @close="emit('close')"
   >
@@ -439,7 +451,7 @@ onUnmounted(() => {
 
     <div class="hero">
       <p class="eyebrow">{{ dateLabel }}</p>
-      <h1 class="title">{{ portalName }}</h1>
+      <h1 class="title">{{ sessionTitle }}</h1>
 
       <div v-if="timerLabel" class="timer-block">
         <button
@@ -456,21 +468,47 @@ onUnmounted(() => {
             {{ session?.pausedAt ? "Продолжить" : "Пауза" }}
           </button>
           <span v-if="session?.pausedAt" class="pause-cap">на паузе</span>
-          <button type="button" class="pause" @click="restRunning ? stopRest() : startRest()">
-            {{ restRunning ? "Завершить отдых" : "Отдых" }}
-          </button>
-          <button
-            v-if="!restRunning"
-            type="button"
-            class="rest-preset mono"
-            aria-label="Время отдыха"
-            @click="showRestWheel = true"
-          >
-            {{ formatDurationMinSec(restPreset) }}
-          </button>
-          <span v-else class="rest-remaining mono">{{
-            formatDurationMinSec(restRemaining)
-          }}</span>
+          <div class="rest" :class="{ running: restRunning }">
+            <button
+              type="button"
+              class="rest-main"
+              :aria-label="restRunning ? 'Завершить отдых' : 'Начать отдых'"
+              @click="restRunning ? stopRest() : startRest()"
+            >
+              <span v-if="restRunning" class="rest-time mono">{{
+                formatDurationMinSec(restRemaining)
+              }}</span>
+              <template v-else>
+                <span>Отдых</span>
+                <span class="rest-time mono">{{
+                  formatDurationMinSec(restPreset)
+                }}</span>
+              </template>
+            </button>
+            <button
+              v-if="!restRunning"
+              type="button"
+              class="rest-tune"
+              aria-label="Время отдыха"
+              @click="showRestWheel = true"
+            >
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 10 10"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M2 3.5 5 6.5 8 3.5"
+                  stroke="currentColor"
+                  stroke-width="1.4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -484,7 +522,7 @@ onUnmounted(() => {
           :data-id="se.id"
         >
           <button type="button" class="handle" aria-label="Перетащить">
-            ≡
+            <GripIcon />
           </button>
           <button type="button" class="row-main" @click="openExercise(se.id)">
             <span class="name">{{
@@ -708,19 +746,55 @@ onUnmounted(() => {
   font-weight: 600;
 }
 
-.rest-preset {
-  margin: 0;
-  padding: 8px 0;
+.rest {
+  display: inline-flex;
+  align-items: stretch;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-3);
+  color: var(--color-text-primary);
+}
+
+.rest.running {
+  background: var(--color-text-primary);
+  color: var(--color-cta-fg);
+}
+
+.rest-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
   background: transparent;
-  font-size: var(--type-helper);
+  color: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.rest-time {
   font-weight: 500;
   color: var(--color-text-secondary);
 }
 
-.rest-remaining {
-  font-size: var(--type-helper);
-  font-weight: 500;
+.rest.running .rest-time {
+  color: inherit;
+  font-size: 1.125rem;
+}
+
+.rest-tune {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  background: transparent;
   color: var(--color-text-secondary);
+  box-shadow: inset 1px 0 0
+    color-mix(in srgb, var(--color-text-secondary) 28%, transparent);
+}
+
+.rest-main:active,
+.rest-tune:active {
+  opacity: 0.75;
 }
 
 .pause-cap,

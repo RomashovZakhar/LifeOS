@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Dumbbell } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import WorkoutTemplatesSheet from "@/components/workout/WorkoutTemplatesSheet.vue";
 import BottomSheet from "@/components/ui/BottomSheet.vue";
@@ -45,6 +46,22 @@ const sessions = useLiveQuery(
 
 const templates = useLiveQuery(() => listTemplates(), [] as WorkoutTemplate[]);
 
+const sessionsReady = ref(false);
+const templatesReady = ref(false);
+watch(sessions, () => {
+  sessionsReady.value = true;
+});
+watch(templates, () => {
+  templatesReady.value = true;
+});
+const showEmptyStart = computed(
+  () =>
+    sessionsReady.value &&
+    templatesReady.value &&
+    !isFuture.value &&
+    sessions.value.length === 0,
+);
+
 const templateById = computed(() => {
   const m = new Map<string, WorkoutTemplate>();
   for (const t of templates.value) m.set(t.id, t);
@@ -69,12 +86,27 @@ function programName(session: WorkoutSession): string {
   );
 }
 
-function rowValue(session: WorkoutSession): string {
-  if (session.status === "in_progress") return "…";
-  if (session.durationSeconds != null) {
-    return formatDurationMinSec(session.durationSeconds);
+function exerciseCountLabel(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return `${n} упражнение`;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+    return `${n} упражнения`;
   }
-  return "·";
+  return `${n} упражнений`;
+}
+
+function statusLabel(session: WorkoutSession): string {
+  if (session.status === "completed") return "завершена";
+  if (session.pausedAt) return "на паузе";
+  return "идёт";
+}
+
+function durationLabel(session: WorkoutSession): string | null {
+  if (session.status !== "completed" || session.durationSeconds == null) {
+    return null;
+  }
+  return formatDurationMinSec(session.durationSeconds);
 }
 
 async function beginEmpty() {
@@ -124,23 +156,57 @@ function onProgramStarted(sessionId: string) {
     </div>
 
     <p v-if="isFuture" class="hint">Нельзя начать в будущем</p>
-    <p v-else-if="sessions.length === 0" class="empty">Пока нет тренировок</p>
 
     <ul v-if="sessions.length" class="list">
       <li v-for="s in sessions" :key="s.id">
         <button type="button" class="row" @click="emit('openSession', s.id)">
-          <span class="main">
-            <span class="program">{{ programName(s) }}</span>
-            <span class="time mono">{{ formatStartedClock(s.startedAt) }}</span>
+          <span class="mark" aria-hidden="true">
+            <Dumbbell :size="22" :stroke-width="1.75" />
           </span>
-          <span class="value mono">{{ rowValue(s) }}</span>
-          <span class="chev" aria-hidden="true">›</span>
+          <span class="copy">
+            <span class="program">{{ programName(s) }}</span>
+            <span class="sub">
+              <span class="mono">{{ formatStartedClock(s.startedAt) }}</span>
+              <span aria-hidden="true">·</span>
+              <span>{{ exerciseCountLabel(s.exercises.length) }}</span>
+              <template v-if="durationLabel(s)">
+                <span aria-hidden="true">·</span>
+                <span class="mono">{{ durationLabel(s) }}</span>
+              </template>
+              <span aria-hidden="true">·</span>
+              <span>{{ statusLabel(s) }}</span>
+            </span>
+          </span>
         </button>
       </li>
     </ul>
 
-    <template v-if="!isFuture" #footer>
-      <button type="button" class="cta" :disabled="creating" @click="onNew">
+    <template v-if="!isFuture && (showEmptyStart || sessions.length)" #footer>
+      <div v-if="showEmptyStart" class="footer">
+        <button
+          v-if="templates.length"
+          type="button"
+          class="cta"
+          @click="showPrograms = true"
+        >
+          ВЫБРАТЬ ПРОГРАММУ
+        </button>
+        <button
+          type="button"
+          :class="templates.length ? 'secondary' : 'cta'"
+          :disabled="creating"
+          @click="beginEmpty"
+        >
+          {{ templates.length ? "Пустая тренировка" : "НАЧАТЬ ТРЕНИРОВКУ" }}
+        </button>
+      </div>
+      <button
+        v-else
+        type="button"
+        class="cta"
+        :disabled="creating"
+        @click="onNew"
+      >
         НОВАЯ ТРЕНИРОВКА
       </button>
     </template>
@@ -219,8 +285,7 @@ function onProgramStarted(sessionId: string) {
   color: var(--color-text-primary);
 }
 
-.hint,
-.empty {
+.hint {
   margin: 20px 0 0;
   font-size: 0.9375rem;
   color: var(--color-text-secondary);
@@ -238,10 +303,10 @@ function onProgramStarted(sessionId: string) {
 .row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   width: 100%;
-  min-height: 56px;
-  padding: 12px 16px;
+  min-height: 72px;
+  padding: 14px 16px;
   border-radius: 14px;
   background: var(--color-surface-3);
   text-align: left;
@@ -252,34 +317,44 @@ function onProgramStarted(sessionId: string) {
   opacity: 0.9;
 }
 
-.main {
+.copy {
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .program {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 1.0625rem;
+  line-height: 1.25;
   color: var(--color-text-primary);
 }
 
-.time {
-  font-size: 0.875rem;
+.sub {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.8125rem;
+  line-height: 1.3;
   color: var(--color-text-secondary);
+  white-space: nowrap;
 }
 
-.value {
-  flex: 0 0 auto;
-  font-size: 0.9375rem;
+.mark {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, #fff 18%, var(--color-surface-3));
   color: var(--color-text-secondary);
-}
-
-.chev {
-  flex: 0 0 auto;
-  color: var(--color-text-secondary);
-  font-size: 1.25rem;
 }
 
 .footer {
@@ -306,8 +381,7 @@ function onProgramStarted(sessionId: string) {
   background: var(--color-surface-3);
   color: var(--color-text-primary);
   font-size: var(--type-cta);
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-weight: 600;
 }
 
 .cta:disabled,

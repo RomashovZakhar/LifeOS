@@ -3,6 +3,7 @@ import Sortable from "sortablejs";
 import { computed, inject, nextTick, onUnmounted, ref, watch } from "vue";
 import ConfirmDeleteSheet from "@/components/habits/ConfirmDeleteSheet.vue";
 import BottomSheet from "@/components/ui/BottomSheet.vue";
+import GripIcon from "@/components/ui/GripIcon.vue";
 import ChipSelect from "@/components/ui/ChipSelect.vue";
 import CloseButton from "@/components/ui/CloseButton.vue";
 import { SHEET_DISMISS_LOCK_KEY } from "@/composables/sheetDismissLock";
@@ -223,7 +224,9 @@ onUnmounted(() => {
     <h2 class="section">Упражнения</h2>
     <ul v-if="orderedIds.length" ref="listEl" class="list">
       <li v-for="id in orderedIds" :key="id" class="row" :data-id="id">
-        <button type="button" class="handle" aria-label="Перетащить">≡</button>
+        <button type="button" class="handle" aria-label="Перетащить">
+          <GripIcon />
+        </button>
         <button type="button" class="name" @click="openRename(id)">
           {{ exerciseById.get(id)?.name ?? "Удалено" }}
         </button>
@@ -421,9 +424,10 @@ onUnmounted(() => {
 .handle {
   flex: 0 0 44px;
   height: 56px;
+  display: grid;
+  place-items: center;
   color: var(--color-text-secondary);
   touch-action: none;
-  font-size: 1.125rem;
 }
 
 .name {

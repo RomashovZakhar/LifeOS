@@ -93,21 +93,23 @@ function toggleDay(day: number) {
         <span>Включено</span>
         <input v-model="enabled" class="toggle" type="checkbox" @change="publish" />
       </label>
+      <div class="page-row days-row">
+        <span id="reminder-days">Дни</span>
+        <div class="days" role="group" aria-labelledby="reminder-days">
+          <button
+            v-for="day in WEEKDAY_ORDER"
+            :key="day"
+            type="button"
+            class="day"
+            :class="{ on: days.includes(day) }"
+            :aria-pressed="days.includes(day)"
+            @click="toggleDay(day)"
+          >
+            {{ dayLabel[day] }}
+          </button>
+        </div>
+      </div>
     </section>
-
-    <div class="days" role="group" aria-label="Дни">
-      <button
-        v-for="day in WEEKDAY_ORDER"
-        :key="day"
-        type="button"
-        class="day"
-        :class="{ on: days.includes(day) }"
-        :aria-pressed="days.includes(day)"
-        @click="toggleDay(day)"
-      >
-        {{ dayLabel[day] }}
-      </button>
-    </div>
 
     <section class="page-group block">
       <button type="button" class="page-row danger" @click="emit('delete')">
@@ -158,23 +160,46 @@ function toggleDay(day: number) {
   margin-left: auto;
 }
 
+.days-row {
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: 10px;
+}
+
 .days {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
-  margin-top: 12px;
+  margin-left: auto;
+  justify-content: flex-end;
 }
 
 .day {
-  flex: 1 1 0;
-  min-height: 40px;
-  border-radius: 12px;
-  background: var(--color-surface-3);
+  flex: 0 0 auto;
+  min-width: 36px;
+  height: 32px;
+  padding: 0 8px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-1);
   color: var(--color-text-secondary);
   font-size: var(--type-caption);
+  font-weight: 500;
+  box-shadow: inset 0 0 0 1.5px transparent;
 }
 
 .day.on {
   color: var(--color-text-primary);
+  box-shadow: inset 0 0 0 1.5px var(--color-border-selected);
+}
+
+.day:focus {
+  outline: none;
+}
+
+.day:focus-visible {
+  outline: none;
   box-shadow: inset 0 0 0 1.5px var(--color-border-selected);
 }
 

@@ -67,11 +67,14 @@ const symbolCollision = ref(false)
 const saving = ref(false)
 
 const typeOptions = computed(() =>
-  TYPE_OPTIONS.map((o) => ({
+  TYPE_OPTIONS.filter(
+    (o) =>
+      o.value !== 'workout_portal' ||
+      !portalTaken.value ||
+      type.value === 'workout_portal',
+  ).map((o) => ({
     ...o,
-    disabled:
-      isEdit.value ||
-      (o.value === 'workout_portal' && portalTaken.value),
+    disabled: isEdit.value,
   })),
 )
 
@@ -252,8 +255,6 @@ async function onSubmit() {
       <div class="field">
         <span class="label">Тип</span>
         <ChipSelect v-model="type" :options="typeOptions" />
-        <span v-if="isEdit" class="helper">Тип нельзя изменить</span>
-        <span v-else-if="portalTaken" class="helper">Уже добавлена</span>
       </div>
 
       <div v-if="type === 'time'" class="field">

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
+import { Pencil } from '@lucide/vue'
 import ConfirmDeleteSheet from '@/components/habits/ConfirmDeleteSheet.vue'
 import SetDurationWheelSheet from '@/components/workout/SetDurationWheelSheet.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
@@ -75,7 +76,6 @@ watch(
 
 const sets = ref<SessionSet[]>([])
 const note = ref('')
-const noteOpen = ref(false)
 const noteField = ref<HTMLTextAreaElement | null>(null)
 
 watch(
@@ -84,17 +84,32 @@ watch(
     if (!se) return
     sets.value = se.sets.map((s) => ({ ...s }))
     note.value = se.note ?? ''
-    if (se.note?.trim()) noteOpen.value = true
   },
   { immediate: true },
 )
 
 const lastLine = computed(() => {
-  if (!lastSets.value?.length) return 'Нет данных'
+  if (!lastSets.value?.length) return ''
   return lastSets.value
     .map((s) => formatSet(mode.value, s))
     .filter(Boolean)
     .join(' · ')
+})
+
+function fitNote() {
+  const el = noteField.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = `${el.scrollHeight}px`
+}
+
+watch(noteField, () => {
+  fitNote()
+})
+
+watch(note, async () => {
+  await nextTick()
+  fitNote()
 })
 
 function formatSet(m: TrackingMode, s: SessionSet): string {
@@ -119,12 +134,6 @@ async function persistNote() {
   await updateSessionExerciseNote(s.id, props.sessionExerciseId, note.value)
 }
 
-async function openNote() {
-  noteOpen.value = true
-  await nextTick()
-  noteField.value?.focus()
-}
-
 function onNoteInput(raw: string) {
   note.value = raw.slice(0, EXERCISE_NOTE_MAX)
   void persistNote()
@@ -132,7 +141,6 @@ function onNoteInput(raw: string) {
 
 function onNoteBlur() {
   note.value = note.value.trim().slice(0, EXERCISE_NOTE_MAX)
-  if (!note.value) noteOpen.value = false
   void persistNote()
 }
 
@@ -246,27 +254,40 @@ watch(sessionExercise, (se) => {
   >
     <template #header>
       <header class="head">
-        <h1 class="title">{{ exercise?.name ?? 'Упражнение' }}</h1>
+        <div class="title-row">
+          <h1 class="title">{{ exercise?.name ?? 'Упражнение' }}</h1>
+          <button
+            v-if="exercise"
+            type="button"
+            class="rename"
+            aria-label="Изменить название"
+            @click="openRename"
+          >
+            <Pencil :size="18" :stroke-width="1.75" />
+          </button>
+        </div>
         <CloseButton />
       </header>
     </template>
 
-    <button
-      v-if="exercise"
-      type="button"
-      class="rename"
-      @click="openRename"
-    >
-      Изменить название
-    </button>
+    <textarea
+      ref="noteField"
+      class="note-input"
+      rows="1"
+      :maxlength="EXERCISE_NOTE_MAX"
+      :value="note"
+      placeholder="Заметка"
+      @input="onNoteInput(($event.target as HTMLTextAreaElement).value)"
+      @blur="onNoteBlur"
+    />
 
-    <section class="last">
-      <h2 class="section">Прошлый раз</h2>
-      <div class="card">
-        <p class="last-line mono">{{ lastLine }}</p>
-        <p v-if="lastNote" class="last-note">{{ lastNote }}</p>
-      </div>
-    </section>
+    <div v-if="lastLine || lastNote" class="last">
+      <p v-if="lastLine" class="last-line">
+        <span class="last-label">Прошлый раз</span>
+        <span class="last-value mono">{{ lastLine }}</span>
+      </p>
+      <p v-if="lastNote" class="last-note">{{ lastNote }}</p>
+    </div>
 
     <section class="sets">
       <h2 class="section">Подходы</h2>
@@ -340,25 +361,6 @@ watch(sessionExercise, (se) => {
       <button type="button" class="add" @click="addSet">+ Подход</button>
     </section>
 
-    <section class="note">
-      <h2 class="section">Заметка</h2>
-      <button v-if="!noteOpen" type="button" class="add" @click="openNote">
-        + Заметка
-      </button>
-      <div v-else class="card note-card">
-        <textarea
-          ref="noteField"
-          class="note-input"
-          rows="2"
-          :maxlength="EXERCISE_NOTE_MAX"
-          :value="note"
-          placeholder="Себе на следующий раз"
-          @input="onNoteInput(($event.target as HTMLTextAreaElement).value)"
-          @blur="onNoteBlur"
-        />
-      </div>
-    </section>
-
     <button type="button" class="danger-link" @click="showDelete = true">
       УДАЛИТЬ УПРАЖНЕНИЕ
     </button>
@@ -419,8 +421,17 @@ watch(sessionExercise, (se) => {
   gap: 12px;
 }
 
+.title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .title {
   margin: 0;
+  min-width: 0;
   font-size: clamp(1.75rem, 7vw, 2.25rem);
   font-weight: 400;
   letter-spacing: -0.02em;
@@ -428,13 +439,17 @@ watch(sessionExercise, (se) => {
 }
 
 .rename {
-  display: block;
-  margin: 0 0 8px;
-  padding: 0;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  margin: 6px 0 0;
+  display: grid;
+  place-items: center;
   color: var(--color-text-secondary);
-  font-size: 0.9375rem;
-  font-weight: 600;
-  text-align: left;
+}
+
+.rename:active {
+  opacity: 0.7;
 }
 
 .rename-field {
@@ -488,46 +503,51 @@ watch(sessionExercise, (se) => {
   font-weight: 400;
 }
 
-.last {
-  margin-top: 8px;
-}
-
-.note {
-  margin-top: 22px;
-}
-
-.card {
-  padding: 16px;
-  border-radius: 14px;
-  background: var(--color-surface-3);
-}
-
-.last-line {
-  margin: 0;
-  color: var(--color-text-secondary);
-  font-size: 0.9375rem;
-}
-
-.last-note {
-  margin: 10px 0 0;
-  color: var(--color-text-primary);
-  font-size: 0.9375rem;
-  line-height: 1.4;
-}
-
-.note-card {
-  padding: 12px 14px;
-}
-
 .note-input {
   display: block;
   width: 100%;
-  min-height: 52px;
+  margin: 8px 0 0;
+  padding: 8px 0;
+  min-height: 48px;
+  max-height: 8.4em;
   resize: none;
+  overflow: auto;
   border: none;
   background: transparent;
   color: var(--color-text-primary);
   font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.last {
+  margin-top: 16px;
+}
+
+.last-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+  margin: 0;
+}
+
+.last-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.last-value {
+  font-size: 0.9375rem;
+  color: var(--color-text-primary);
+}
+
+.last-note {
+  margin: 6px 0 0;
+  color: var(--color-text-secondary);
   font-size: 0.9375rem;
   line-height: 1.4;
 }
