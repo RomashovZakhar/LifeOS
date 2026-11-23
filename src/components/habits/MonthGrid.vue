@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from "vue";
+import { useAxisLock } from "@/composables/useAxisLock";
 import type { Tracker } from "@/db";
 import type { GridDay } from "@/lib/calendar";
 
@@ -33,6 +34,7 @@ const ROW_H_PX = 34;
 const HEAD_H_PX = 40;
 
 const scrollRoot = ref<HTMLElement | null>(null);
+const { release: releaseAxisLock } = useAxisLock(scrollRoot);
 const rowRefs = new Map<string, HTMLElement>();
 
 function setRowRef(date: string, el: Element | null) {
@@ -81,6 +83,7 @@ async function ensureSelectedVisible() {
     requestAnimationFrame(() => resolve());
   });
 
+  releaseAxisLock();
   const root = scrollRoot.value;
   const el =
     rowRefs.get(props.selectedDate) ??
