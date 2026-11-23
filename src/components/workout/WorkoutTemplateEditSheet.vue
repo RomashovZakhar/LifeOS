@@ -13,6 +13,7 @@ import {
   getTemplate,
   listActiveExercises,
   putTemplate,
+  renameExercise,
   type Exercise,
   type TrackingMode,
   type WorkoutTemplate,
@@ -57,6 +58,8 @@ const orderedIds = computed(() => template.value?.exerciseIds ?? []);
 const showAdd = ref(false);
 const showCreate = ref(false);
 const showDelete = ref(false);
+const renameTargetId = ref<string | null>(null);
+const renameDraft = ref("");
 const newName = ref("");
 const newMode = ref<TrackingMode>("weight_reps");
 const search = ref("");
@@ -103,6 +106,20 @@ async function removeExercise(id: string) {
   const t = template.value;
   if (!t) return;
   await setIds(t.exerciseIds.filter((x) => x !== id));
+}
+
+function openRename(id: string) {
+  const ex = exerciseById.value.get(id);
+  if (!ex) return;
+  renameTargetId.value = id;
+  renameDraft.value = ex.name;
+}
+
+async function submitRename() {
+  const id = renameTargetId.value;
+  if (!id || !renameDraft.value.trim()) return;
+  await renameExercise(id, renameDraft.value);
+  renameTargetId.value = null;
 }
 
 async function submitCreate() {
@@ -207,7 +224,9 @@ onUnmounted(() => {
     <ul v-if="orderedIds.length" ref="listEl" class="list">
       <li v-for="id in orderedIds" :key="id" class="row" :data-id="id">
         <button type="button" class="handle" aria-label="Перетащить">≡</button>
-        <span class="name">{{ exerciseById.get(id)?.name ?? "Удалено" }}</span>
+        <button type="button" class="name" @click="openRename(id)">
+          {{ exerciseById.get(id)?.name ?? "Удалено" }}
+        </button>
         <button
           type="button"
           class="del"
@@ -281,6 +300,36 @@ onUnmounted(() => {
         @click="submitCreate"
       >
         СОЗДАТЬ
+      </button>
+    </template>
+  </BottomSheet>
+
+  <BottomSheet
+    v-if="renameTargetId"
+    size="auto"
+    title="Название"
+    :layer="80"
+    @close="renameTargetId = null"
+  >
+    <label class="field">
+      <span class="label">Название</span>
+      <input
+        v-model="renameDraft"
+        class="input"
+        type="text"
+        maxlength="80"
+        @keydown.enter.prevent="submitRename"
+      />
+    </label>
+    <p class="helper">Способ учёта нельзя изменить</p>
+    <template #footer>
+      <button
+        type="button"
+        class="cta"
+        :disabled="!renameDraft.trim()"
+        @click="submitRename"
+      >
+        СОХРАНИТЬ
       </button>
     </template>
   </BottomSheet>
@@ -381,6 +430,13 @@ onUnmounted(() => {
   flex: 1 1 auto;
   min-width: 0;
   font-size: 1.0625rem;
+  text-align: left;
+}
+
+.helper {
+  margin: 14px 0 8px;
+  font-size: var(--type-helper);
+  color: var(--color-text-secondary);
 }
 
 .del {

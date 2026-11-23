@@ -11,16 +11,14 @@ import {
   getExercise,
   lastCompletedSetsForExercise,
   removeSessionExercise,
+  renameExercise,
   updateSessionExerciseNote,
   updateSessionExerciseSets,
   type SessionSet,
   type TrackingMode,
   type WorkoutSession,
 } from '@/db'
-import {
-  formatDurationMinSec,
-  TRACKING_MODE_LABEL,
-} from '@/lib/workoutFormat'
+import { formatDurationMinSec } from '@/lib/workoutFormat'
 
 const props = defineProps<{
   sessionId: string
@@ -209,6 +207,22 @@ function onDurationSave(seconds: number) {
 }
 
 const showDelete = ref(false)
+const showRename = ref(false)
+const renameDraft = ref('')
+
+function openRename() {
+  const ex = exercise.value
+  if (!ex) return
+  renameDraft.value = ex.name
+  showRename.value = true
+}
+
+async function submitRename() {
+  const ex = exercise.value
+  if (!ex || !renameDraft.value.trim()) return
+  await renameExercise(ex.id, renameDraft.value)
+  showRename.value = false
+}
 
 async function onDeleteExercise() {
   const s = session.value
@@ -237,7 +251,14 @@ watch(sessionExercise, (se) => {
       </header>
     </template>
 
-    <p class="badge">{{ TRACKING_MODE_LABEL[mode] }}</p>
+    <button
+      v-if="exercise"
+      type="button"
+      class="rename"
+      @click="openRename"
+    >
+      Изменить название
+    </button>
 
     <section class="last">
       <h2 class="section">Прошлый раз</h2>
@@ -350,6 +371,36 @@ watch(sessionExercise, (se) => {
     @save="onDurationSave"
   />
 
+  <BottomSheet
+    v-if="showRename"
+    size="auto"
+    title="Название"
+    :layer="60"
+    @close="showRename = false"
+  >
+    <label class="rename-field">
+      <span class="rename-label">Название</span>
+      <input
+        v-model="renameDraft"
+        class="rename-input"
+        type="text"
+        maxlength="80"
+        @keydown.enter.prevent="submitRename"
+      />
+    </label>
+    <p class="rename-helper">Способ учёта нельзя изменить</p>
+    <template #footer>
+      <button
+        type="button"
+        class="rename-cta"
+        :disabled="!renameDraft.trim()"
+        @click="submitRename"
+      >
+        СОХРАНИТЬ
+      </button>
+    </template>
+  </BottomSheet>
+
   <ConfirmDeleteSheet
     v-if="showDelete"
     title="Удалить упражнение?"
@@ -376,17 +427,59 @@ watch(sessionExercise, (se) => {
   line-height: 1.1;
 }
 
-.badge {
-  display: inline-block;
+.rename {
+  display: block;
   margin: 0 0 8px;
-  padding: 6px 12px;
-  border-radius: 999px;
+  padding: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.rename-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.rename-label {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--color-text-primary);
+}
+
+.rename-input {
+  height: 52px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 14px;
   background: var(--color-surface-3);
-  font-size: 0.6875rem;
+  color: var(--color-text-primary);
+  font-size: 1.0625rem;
+  box-sizing: border-box;
+}
+
+.rename-helper {
+  margin: 0 0 8px;
+  font-size: var(--type-helper);
+  color: var(--color-text-secondary);
+}
+
+.rename-cta {
+  width: 100%;
+  height: 52px;
+  border-radius: var(--radius-md);
+  background: var(--color-cta-bg);
+  color: var(--color-cta-fg);
+  font-size: var(--type-cta);
   font-weight: 700;
   letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--color-text-secondary);
+}
+
+.rename-cta:disabled {
+  opacity: 0.4;
 }
 
 .section {

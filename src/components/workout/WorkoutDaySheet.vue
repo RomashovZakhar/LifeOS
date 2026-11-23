@@ -171,7 +171,7 @@ function onProgramStarted(sessionId: string) {
         </button>
         <button
           type="button"
-          class="link"
+          class="secondary"
           :disabled="creating"
           @click="beginEmpty"
         >
@@ -299,18 +299,19 @@ function onProgramStarted(sessionId: string) {
   letter-spacing: 0.04em;
 }
 
-.cta:disabled,
-.link:disabled {
-  opacity: 0.35;
+.secondary {
+  width: 100%;
+  height: 52px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-3);
+  color: var(--color-text-primary);
+  font-size: var(--type-cta);
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
-.link {
-  background: transparent;
-  color: var(--color-text-secondary);
-  font-size: 0.9375rem;
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  padding: 4px 0;
+.cta:disabled,
+.secondary:disabled {
+  opacity: 0.35;
 }
 </style>

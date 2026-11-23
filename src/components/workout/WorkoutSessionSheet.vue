@@ -12,6 +12,7 @@ import { useLiveQuery } from "@/composables/useLiveQuery";
 import { SHEET_DISMISS_LOCK_KEY } from "@/composables/sheetDismissLock";
 import {
   db,
+  createTemplateFromSession,
   deleteSession,
   elapsedSeconds,
   finishSession,
@@ -23,6 +24,7 @@ import {
   getSession,
   resumeSession,
   sessionDiffersFromTemplate,
+  sessionExerciseIds,
   sessionHasValidFinish,
   setSummaryLine,
   setRestSeconds,
@@ -200,6 +202,9 @@ async function onSaveRest(seconds: number) {
   await setRestSeconds(next);
 }
 const showUpdateTemplate = ref(false);
+const showCreateTemplate = ref(false);
+const showCreateTemplateName = ref(false);
+const newProgramName = ref("");
 const showAdd = ref(false);
 const exerciseId = ref<string | null>(null);
 
@@ -229,12 +234,23 @@ async function maybeAskUpdateTemplate(finished: WorkoutSession | null) {
   }
 }
 
+async function maybeAskAfterFinish(finished: WorkoutSession | null) {
+  if (!finished) return;
+  if (!finished.templateId) {
+    if (sessionExerciseIds(finished).length > 0) {
+      showCreateTemplate.value = true;
+    }
+    return;
+  }
+  await maybeAskUpdateTemplate(finished);
+}
+
 async function onFinish() {
   const s = session.value;
   if (!s || !canFinish.value) return;
   try {
     const finished = await finishSession(s.id);
-    await maybeAskUpdateTemplate(finished);
+    await maybeAskAfterFinish(finished);
   } catch {
     flash("Добавьте хотя бы один подход");
   }
@@ -245,6 +261,20 @@ async function onUpdateTemplate(yes: boolean) {
   const s = session.value;
   if (!yes || !s?.templateId) return;
   await syncTemplateFromSession(s.templateId, s);
+}
+
+function onCreateTemplateChoice(yes: boolean) {
+  showCreateTemplate.value = false;
+  if (!yes) return;
+  newProgramName.value = "";
+  showCreateTemplateName.value = true;
+}
+
+async function submitCreateTemplate() {
+  const s = session.value;
+  if (!s) return;
+  await createTemplateFromSession(s, newProgramName.value);
+  showCreateTemplateName.value = false;
 }
 
 function openExercise(sessionExerciseId: string) {
@@ -280,7 +310,7 @@ async function onSaveDuration(seconds: number) {
     try {
       const finished = await finishSessionWithDuration(s.id, seconds);
       showDuration.value = false;
-      await maybeAskUpdateTemplate(finished);
+      await maybeAskAfterFinish(finished);
     } catch {
       flash("Добавьте хотя бы один подход");
     }
@@ -557,6 +587,51 @@ onUnmounted(() => {
     </template>
   </BottomSheet>
 
+  <BottomSheet
+    v-if="showCreateTemplate"
+    size="auto"
+    title="Создать программу?"
+    :layer="50"
+    @close="onCreateTemplateChoice(false)"
+  >
+    <p class="body-text">
+      Сохранить упражнения этой тренировки как программу?
+    </p>
+    <template #footer>
+      <div class="actions">
+        <button type="button" class="ghost" @click="onCreateTemplateChoice(false)">
+          НЕТ
+        </button>
+        <button type="button" class="cta" @click="onCreateTemplateChoice(true)">
+          ДА
+        </button>
+      </div>
+    </template>
+  </BottomSheet>
+
+  <BottomSheet
+    v-if="showCreateTemplateName"
+    size="auto"
+    title="Новая программа"
+    :layer="60"
+    @close="showCreateTemplateName = false"
+  >
+    <label class="field">
+      <span class="label">Название</span>
+      <input
+        v-model="newProgramName"
+        class="input"
+        type="text"
+        maxlength="60"
+      />
+    </label>
+    <template #footer>
+      <button type="button" class="cta" @click="submitCreateTemplate">
+        СОЗДАТЬ
+      </button>
+    </template>
+  </BottomSheet>
+
   <WorkoutExerciseSheet
     v-if="exerciseId && session"
     :session-id="session.id"
@@ -808,5 +883,28 @@ onUnmounted(() => {
   font-size: 0.9375rem;
   color: var(--color-text-secondary);
   line-height: 1.4;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--color-text-primary);
+}
+
+.input {
+  height: 52px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 14px;
+  background: var(--color-surface-3);
+  color: var(--color-text-primary);
+  font-size: 1.0625rem;
+  box-sizing: border-box;
 }
 </style>

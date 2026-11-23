@@ -60,8 +60,12 @@ function hasBlockingOverlayQuery(): boolean {
 }
 
 const showNewTracker = ref(false);
-/** Open Today on cold start unless a query sheet already owns the screen. */
-const todayOpen = ref(!hasBlockingOverlayQuery());
+/**
+ * Cold start: open Today only after trackers load and there is at least one.
+ * An empty library keeps the dock (and +) visible. A query sheet owns the screen instead.
+ */
+const launchTodayDecided = ref(hasBlockingOverlayQuery());
+const todayOpen = ref(false);
 const futureHintFlash = ref(false);
 const entryTarget = ref<{ tracker: Tracker; date: string } | null>(null);
 const checklistDayTarget = ref<{ trackerId: string; date: string } | null>(
@@ -72,6 +76,12 @@ const trackers = useLiveQuery(
   () => db.trackers.orderBy("sortOrder").toArray(),
   [] as Tracker[],
 );
+
+watch(trackers, () => {
+  if (launchTodayDecided.value) return;
+  launchTodayDecided.value = true;
+  if (trackers.value.length > 0) todayOpen.value = true;
+});
 
 const monthEntries = useLiveQuery(
   () =>

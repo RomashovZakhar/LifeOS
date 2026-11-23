@@ -484,6 +484,32 @@ export async function syncTemplateFromSession(
   });
 }
 
+/** Save this session's exercise order as a new program and link the session to it. */
+export async function createTemplateFromSession(
+  session: WorkoutSession,
+  name: string,
+): Promise<WorkoutTemplate | null> {
+  const current = await getSession(session.id);
+  if (!current) return null;
+  const now = new Date().toISOString();
+  const template: WorkoutTemplate = {
+    id: crypto.randomUUID(),
+    name: name.trim() || "Программа",
+    exerciseIds: sessionExerciseIds(current),
+    updatedAt: now,
+  };
+  await db.transaction(
+    "rw",
+    db.workout_templates,
+    db.workout_sessions,
+    async () => {
+      await db.workout_templates.add(template);
+      await putSession({ ...current, templateId: template.id });
+    },
+  );
+  return template;
+}
+
 export function setSummaryLine(mode: TrackingMode, sets: SessionSet[]): string {
   if (sets.length === 0) return "…";
 
