@@ -423,7 +423,7 @@ watch(sessionExercise, (se) => {
 
 .title-row {
   display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
   gap: 2px;
   min-width: 0;
   flex: 1 1 auto;
